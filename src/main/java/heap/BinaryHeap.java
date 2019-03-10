@@ -83,7 +83,7 @@ public class BinaryHeap<T extends Comparable> {
      * 下滤
      * @param hole
      */
-    public void percolateDown (int hole) {
+    private void percolateDown (int hole) {
         int child;
         T tmp = items[hole];
         for (; hole << 1 <= currentSize; hole = child) {
@@ -92,7 +92,7 @@ public class BinaryHeap<T extends Comparable> {
             if (child != currentSize && items[child + 1].compareTo(items[child]) < 0) {
                 child++;
             }
-            // 如果小的子元素比
+            // 和小的子元素比
             if (items[child].compareTo(tmp) < 0) {
                 items[hole] = items[child];
             } else {
@@ -117,15 +117,17 @@ public class BinaryHeap<T extends Comparable> {
      */
     private void enlargeArray (int newSize) {
         items = Arrays.copyOf(items, capacity << 1);
+        capacity = items.length;
     }
 
     public BinaryHeap(T[] originalItems) {
-        currentSize = originalItems.length;
-        items = (T[])new Comparable[(currentSize + 2) * 11 / 10];
+        this.currentSize = originalItems.length;
+        this.items = (T[])new Comparable[(currentSize + 2) * 11 / 10];
         int i = 1;
         for (T item : originalItems) {
-            items[i++] = item;
+            this.items[i++] = item;
         }
+        this.capacity = this.items.length;
         buildHeap();
     }
 
@@ -137,7 +139,8 @@ public class BinaryHeap<T extends Comparable> {
 
 
     public static void main(String[] args){
-        Integer[] items = new Integer[]{13, 14, 16, 19, 21, 19, 68, 65, 26, 32, 31};
+        //Integer[] items = new Integer[]{13, 14, 16, 19, 21, 19, 68, 65, 26, 32, 31};
+        Integer[] items = new Integer[]{113, 104, 6, 129, 210, 9, 6, 15, 1826, 362, 31};
         BinaryHeap<Integer>  heap = new BinaryHeap<Integer>(items);
         for (int i = 0; i < items.length; i++) {
             System.out.println(heap.deleteMin());
