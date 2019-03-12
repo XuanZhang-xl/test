@@ -1,9 +1,10 @@
 package heap;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
- * 二叉堆
+ * 二叉堆, 线程不安全
  * created by XUAN on 2019/03/10
  */
 public class BinaryHeap<T extends Comparable> {
@@ -29,11 +30,12 @@ public class BinaryHeap<T extends Comparable> {
     private static final int DEFAULT_CAPACITY = 128;
 
     public void insert(T item) {
+        // 第0个元素为空
         if (currentSize == items.length - 1) {
             enlargeArray(items.length << 1 + 1);
         }
-        int hole = ++ currentSize;
-        for (items[0] = item; item.compareTo(items[hole >> 1]) < 0; hole /= 2) {
+        int hole = ++currentSize;
+        for (items[0] = item; item.compareTo(items[hole >> 1]) < 0; hole = hole >> 1) {
             items[hole] = items[hole >> 1];
         }
         items[hole] = item;
@@ -53,7 +55,7 @@ public class BinaryHeap<T extends Comparable> {
      */
     public T deleteMin () {
         if (isEmplty()) {
-            throw new NullPointerException();
+            throw new NullPointerException("二叉堆为空!");
         }
         T min = findMin();
         items[1] = items[currentSize--];
@@ -92,7 +94,7 @@ public class BinaryHeap<T extends Comparable> {
             if (child != currentSize && items[child + 1].compareTo(items[child]) < 0) {
                 child++;
             }
-            // 和小的子元素比
+            // 和小的子元素比, 如果子元素小, 则放到父元素的位置
             if (items[child].compareTo(tmp) < 0) {
                 items[hole] = items[child];
             } else {
@@ -116,12 +118,31 @@ public class BinaryHeap<T extends Comparable> {
      * 扩容
      */
     private void enlargeArray (int newSize) {
-        items = Arrays.copyOf(items, capacity << 1);
+        items = Arrays.copyOf(items, newSize);
         capacity = items.length;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public int getCurrentSize() {
+        return currentSize;
     }
 
     public BinaryHeap(T[] originalItems) {
         this.currentSize = originalItems.length;
+        this.items = (T[])new Comparable[(currentSize + 2) * 11 / 10];
+        int i = 1;
+        for (T item : originalItems) {
+            this.items[i++] = item;
+        }
+        this.capacity = this.items.length;
+        buildHeap();
+    }
+
+    public BinaryHeap(List<T> originalItems) {
+        this.currentSize = originalItems.size();
         this.items = (T[])new Comparable[(currentSize + 2) * 11 / 10];
         int i = 1;
         for (T item : originalItems) {
