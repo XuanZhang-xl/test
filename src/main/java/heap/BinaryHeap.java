@@ -30,15 +30,23 @@ public class BinaryHeap<T extends Comparable> {
     private static final int DEFAULT_CAPACITY = 128;
 
     public void insert(T item) {
+        if (item == null) {
+            throw new NullPointerException("插入元素为空!");
+        }
         // 第0个元素为空
         if (currentSize == items.length - 1) {
             enlargeArray(items.length << 1 + 1);
         }
         int hole = ++currentSize;
+        // 将item先放在0是为了, 万一item是最小, 那么判断条件是item.compareTo(items[0]), 自己和自己比跳出循环, 不然可能空指针
         for (items[0] = item; item.compareTo(items[hole >> 1]) < 0; hole = hole >> 1) {
+            // 把父元素放到子元素的位置
             items[hole] = items[hole >> 1];
         }
+        // 最终item放在某个父元素的位置上
         items[hole] = item;
+        // 强迫症, insert后清空第0位
+        items[0] = null;
     }
 
     /**
@@ -57,8 +65,13 @@ public class BinaryHeap<T extends Comparable> {
         if (isEmplty()) {
             throw new NullPointerException("二叉堆为空!");
         }
+        // 用于返回删除元素
         T min = findMin();
-        items[1] = items[currentSize--];
+        // 末尾元素放到第一位, 覆盖掉第一位
+        items[1] = items[currentSize];
+        // 末尾元素变空同时size减一
+        items[currentSize--] = null;
+        // 把末尾元素(现第一位元素)下滤即可得到新堆
         percolateDown(1);
         return min;
     }
@@ -75,8 +88,8 @@ public class BinaryHeap<T extends Comparable> {
      * 空堆
      */
     public void makeEmpty () {
-        for (T item : items) {
-            item = null;
+        for (int i = 0; i < currentSize; i++) {
+            items[i] = null;
         }
         currentSize = 0;
     }
@@ -98,7 +111,7 @@ public class BinaryHeap<T extends Comparable> {
             if (items[child].compareTo(tmp) < 0) {
                 items[hole] = items[child];
             } else {
-                // 这里结束的话末尾元素放在了第一位
+                // 父元素小, 则下滤元素位置已确定, 就是当前子元素(hole)的位置
                 break;
             }
         }
