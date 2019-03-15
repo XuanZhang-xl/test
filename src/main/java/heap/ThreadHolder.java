@@ -39,12 +39,14 @@ public class ThreadHolder {
 
 
     public void addTask (Task task) {
-        lock.lock();
-        try {
-            heap.insert(task);
-            condition.signal();
-        } finally {
-            lock.unlock();
+        if (task != null) {
+            lock.lock();
+            try {
+                heap.insert(task);
+                condition.signal();
+            } finally {
+                lock.unlock();
+            }
         }
     }
 
