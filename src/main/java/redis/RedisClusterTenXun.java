@@ -20,6 +20,8 @@ public class RedisClusterTenXun {
 
     private static String host = "140.143.206.160";
 
+    private static byte[] redisList = "list".getBytes();
+
     public static void main(String[] args){
         //ValueOperations<String, String> operations = redisCacheTemplate().opsForValue();
         //String hello = operations.get("hello");
@@ -27,6 +29,17 @@ public class RedisClusterTenXun {
         RedisClusterConnection clusterConnection = getRedisFactory().getClusterConnection();
         byte[] bytes = clusterConnection.get("hello".getBytes());
         System.out.println(new String(bytes));
+
+        List<byte[]> ranges = clusterConnection.lRange(redisList, 0, -1);
+        for (byte[] range : ranges) {
+            System.out.println(new String(range));
+        }
+        //Long num = clusterConnection.rPush(redisList, "企鹅老婆".getBytes());
+        //num = clusterConnection.rPush(redisList, "企鹅老婆2".getBytes());
+        //num = clusterConnection.rPush(redisList, "企鹅老婆232".getBytes());
+        //// 最多阻塞两秒, 来拿出list队列中的元素
+        //byte[] pop = clusterConnection.rPop(redisList);
+        //System.out.println(new String(pop));
     }
 
     public static RedisTemplate<String, String> redisCacheTemplate() {
@@ -49,8 +62,8 @@ public class RedisClusterTenXun {
         redisClusterConfiguration.setClusterNodes(redisNodes);
         redisClusterConfiguration.setMaxRedirects(3);
 
+        // TODO: 使用ssl的配置??
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .useSsl().and()
                 .commandTimeout(Duration.ofSeconds(2))
                 .shutdownTimeout(Duration.ZERO)
                 .build();

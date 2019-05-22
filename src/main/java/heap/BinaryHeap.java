@@ -28,6 +28,10 @@ public class BinaryHeap<T extends Comparable> {
      */
     private static final int DEFAULT_CAPACITY = 128;
 
+    /**
+     * 假设插在最后面, 从后往上比较
+     * @param item
+     */
     public void insert(T item) {
         if (currentSize == items.length - 1) {
             enlargeArray(items.length << 1 + 1);
@@ -80,7 +84,7 @@ public class BinaryHeap<T extends Comparable> {
     }
 
     /**
-     * 下滤
+     * 下滤, 假设要修正在hold这个点上的变量,则将他和他的小的那个子元素比较, 如果小的子元素小, 则将子元素往上移,将他往下移,直到比小的子元素大或到底为止
      * @param hole
      */
     private void percolateDown (int hole) {
@@ -96,7 +100,6 @@ public class BinaryHeap<T extends Comparable> {
             if (items[child].compareTo(tmp) < 0) {
                 items[hole] = items[child];
             } else {
-                // 这里结束的话末尾元素放在了第一位
                 break;
             }
         }
@@ -140,7 +143,8 @@ public class BinaryHeap<T extends Comparable> {
 
     public static void main(String[] args){
         //Integer[] items = new Integer[]{13, 14, 16, 19, 21, 19, 68, 65, 26, 32, 31};
-        Integer[] items = new Integer[]{113, 104, 6, 129, 210, 9, 6, 15, 1826, 362, 31};
+        //Integer[] items = new Integer[]{113, 104, 6, 129, 210, 9, 6, 15, 1826, 362, 31};
+        Integer[] items = new Integer[]{113, 104, 100, 29, 10, 9, 6, 5, 4, 3, 1};
         BinaryHeap<Integer>  heap = new BinaryHeap<Integer>(items);
         for (int i = 0; i < items.length; i++) {
             System.out.println(heap.deleteMin());

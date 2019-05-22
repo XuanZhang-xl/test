@@ -5,6 +5,7 @@ import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisStringCommands;
 import io.lettuce.core.cluster.RedisClusterClient;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
@@ -20,6 +21,8 @@ public class EasyRedisConnection {
 
     public static void main(String[] args){
         JedisPool pool = new JedisPool(host, 7001);
+        Jedis jedis = pool.getResource();
+        jedis.set(key, "world");
         String hello = pool.getResource().get(key);
         System.out.println(hello);
 

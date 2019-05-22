@@ -18,9 +18,39 @@ public class HashTest {
 
         for (Object o : objList) {
             int h;
-            System.out.println("hashCode:" + o.hashCode() + "  hashKey:" + ((h = o.hashCode()) ^ (h >>> 16)));
+            System.out.println("hashCode:" + o.hashCode() + "   h >>> 16:" + (o.hashCode() >>> 16) + "  hashKey:" + ((h = o.hashCode()) ^ (h >>> 16)));
         }
     }
+
+    @Test
+    public void testHash () {
+        System.out.println("布尔");
+        System.out.println(Boolean.TRUE.hashCode());
+        Boolean bo = true;
+        System.out.println(bo.hashCode());
+
+        System.out.println("int");
+        Integer one1 = new Integer(1);
+        Integer one2 = new Integer(1);
+        Integer two1 = new Integer(2);
+        Integer two2 = new Integer(2);
+        Integer th1 = new Integer(1000);
+        Integer th2 = new Integer(1000);
+        System.out.println(one1.hashCode());
+        System.out.println(one2.hashCode());
+        System.out.println(two1.hashCode());
+        System.out.println(two2.hashCode());
+        System.out.println(th1.hashCode());
+        System.out.println(th2.hashCode());
+        System.out.println("byte");
+        byte a = 97;
+        System.out.println("97的byte为" + a);
+        Byte aByte1 = new Byte("97");
+        Byte aByte2 = new Byte("97");
+        System.out.println(aByte1.hashCode());
+        System.out.println(aByte2.hashCode());
+    }
+
 
     @Test
     public void test() {
