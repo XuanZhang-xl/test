@@ -87,6 +87,9 @@ public class SumSolution {
      * 来源：力扣（LeetCode）
      * 链接：https://leetcode-cn.com/problems/3sum
      * 著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
+     *
+     *
+     * 解决: 排序后双指针
      * @param nums
      * @return
      */
@@ -94,7 +97,8 @@ public class SumSolution {
     public void threeSum() {
         long begin = System.currentTimeMillis();
         //int[] nums = new int[]{12,13,-10,-15,4,5,-8,11,10,3,-11,4,-10,4,-7,9,1,8,-5,-1,-9,-4,3,-14,-11,14,0,-8,-6,-2,14,-9,-4,11,-8,-14,-7,-9,4,10,9,9,-1,7,-10,7,1,6,-8,12,12,-10,-7,0,-9,-3,-1,-1,-4,8,12,-13,6,-7,13,5,-14,13,12,6,8,-2,-8,-15,-10,-3,-1,7,10,7,-4,7,4,-4,14,3,0,-10,-13,11,5,6,13,-4,6,3,-13,8,1,6,-9,-14,-11,-10,8,-5,-6,-7,9,-11,7,12,3,-4,-7,-6,14,8,-1,8,-4,-11};
-        int[] nums = new int[]{0,3,0,1,1,-1,-5,-5,3,-3,-3,0};
+        //int[] nums = new int[]{0,3,0,1,1,-1,-5,-5,3,-3,-3,0};
+        int[] nums = new int[]{-1,0,1,2,-1,-4};
         System.out.println(threeSum0(nums));
         long end = System.currentTimeMillis();
         System.out.println("use " + (end - begin));
@@ -104,31 +108,35 @@ public class SumSolution {
         Arrays.sort(nums);
         for (int i = 0; i < nums.length; i++) {
             int first = nums[i];
-            int begin = 0;
+            if (i > 0 && first == nums[i - 1]) {
+                continue;
+            }
+            int begin = i+1;
             int end = nums.length - 1;
-            while (true) {
-                if (begin == i) {
-                    begin++;
-                    continue;
-                }
+            while (begin < end) {
                 if (end == i) {
-                    end++;
+                    end--;
                     continue;
-                }
-                if (begin == end) {
-                    break;
                 }
                 int second = nums[begin];
                 if (begin > 0 && begin - 1 != i && second == nums[begin - 1]) {
+                    begin++;
                     continue;
                 }
                 int third = nums[end];
                 if (end < nums.length - 1 && end + 1 != i && third == nums[end + 1]) {
+                    end--;
                     continue;
                 }
-                if (first + second + third == 0) {
-                    List<Integer> answer = new ArrayList<>(first);
+                int sum = first + second + third;
+                if (sum == 0) {
+                    List<Integer> answer = Arrays.asList(first, second, third);
                     result.add(answer);
+                    begin++;
+                } else if (sum < 0) {
+                    begin++;
+                } else {
+                    end--;
                 }
             }
         }
