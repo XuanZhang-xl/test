@@ -54,11 +54,11 @@ public class RedisClusterTenXun {
         RedisClusterConfiguration redisClusterConfiguration = new RedisClusterConfiguration();
         List<RedisNode> redisNodes = new ArrayList<RedisNode>();
         redisNodes.add(new RedisNode(host, 7001));
-        redisNodes.add(new RedisNode(host, 7002));
-        redisNodes.add(new RedisNode(host, 7003));
-        redisNodes.add(new RedisNode(host, 7004));
-        redisNodes.add(new RedisNode(host, 7005));
-        redisNodes.add(new RedisNode(host, 7006));
+        //redisNodes.add(new RedisNode(host, 7002));
+        //redisNodes.add(new RedisNode(host, 7003));
+        //redisNodes.add(new RedisNode(host, 7004));
+        //redisNodes.add(new RedisNode(host, 7005));
+        //redisNodes.add(new RedisNode(host, 7006));
         redisClusterConfiguration.setClusterNodes(redisNodes);
         redisClusterConfiguration.setMaxRedirects(3);
 

@@ -26,21 +26,21 @@ public class EasyRedisConnection {
         String hello = pool.getResource().get(key);
         System.out.println(hello);
 
-        RedisClient client = RedisClient.create("redis://" + host + ":7001");
-        StatefulRedisConnection<String, String> connection = client.connect();
-        RedisStringCommands sync = connection.sync();
-        System.out.println(sync.get(key));
-
-        List<RedisURI> list = new ArrayList<>();
-        list.add(RedisURI.create("redis://" + host + ":7001"));
-        list.add(RedisURI.create("redis://" + host + ":7002"));
-        list.add(RedisURI.create("redis://" + host + ":7003"));
-        list.add(RedisURI.create("redis://" + host + ":7004"));
-        list.add(RedisURI.create("redis://" + host + ":7005"));
-        list.add(RedisURI.create("redis://" + host + ":7006"));
-        RedisClusterClient clusterClient = RedisClusterClient.create(list);
-        String s = clusterClient.connect().sync().get(key);
-        System.out.println(s);
+        //RedisClient client = RedisClient.create("redis://" + host + ":7001");
+        //StatefulRedisConnection<String, String> connection = client.connect();
+        //RedisStringCommands sync = connection.sync();
+        //System.out.println(sync.get(key));
+        //
+        //List<RedisURI> list = new ArrayList<>();
+        //list.add(RedisURI.create("redis://" + host + ":7001"));
+        //list.add(RedisURI.create("redis://" + host + ":7002"));
+        //list.add(RedisURI.create("redis://" + host + ":7003"));
+        //list.add(RedisURI.create("redis://" + host + ":7004"));
+        //list.add(RedisURI.create("redis://" + host + ":7005"));
+        //list.add(RedisURI.create("redis://" + host + ":7006"));
+        //RedisClusterClient clusterClient = RedisClusterClient.create(list);
+        //String s = clusterClient.connect().sync().get(key);
+        //System.out.println(s);
 
     }
 }
