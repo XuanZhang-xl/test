@@ -1,4 +1,5 @@
 ## Socket、ServerSocket的区别
+https://www.cnblogs.com/douzi520/p/9303179.html
 
 ##### 不妨先考虑一个问题：在上一节的实例中，我们运行 echo 服务后，在客户端连接成功时，一个有多少个 socket 存在？
 
@@ -30,3 +31,9 @@ accept 返回的 Socket 则是这样：<127.0.0.1:xxxx, 127.0.0.1:9877>。其中
 如果数据是发送给一个已连接的 socket，内核会找到一个完全匹配的实例，所以数据准确发送给了对端。
 
 如果是客户端要发起连接，这时候只有 <* : *, *:9877> 会匹配成功，所以 SYN 也准确发送给了监听套接字。
+
+
+
+
+### TCP/IP详解 卷1：协议 第一版
+http://www.52im.net/topic-tcpipvol1.html?mobile=no
