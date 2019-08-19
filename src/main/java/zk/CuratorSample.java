@@ -55,6 +55,9 @@ public class CuratorSample {
 
         watcherForeverChild(operator, nodePath);
 
+        // acl
+        //operator.setACL().withACL()
+
         Thread.sleep(3000);
         operator.close();
         System.out.println("当前客户端状态: " + operator.getState().name());

@@ -40,6 +40,8 @@ public class CuratorOperator {
 
         curatorFramework = CuratorFrameworkFactory
                 .builder()
+                // 这里可以直接增加权限,
+                .authorization("digest", "xuan1:123456".getBytes())
                 .connectString(zkServer)
                 .sessionTimeoutMs(timeout)
                 .retryPolicy(retryPolicy)
