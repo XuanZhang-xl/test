@@ -10,6 +10,7 @@ import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -64,8 +65,13 @@ public class RedisClusterTenXun {
         redisClient.shutdown();
     }
 
+    public static RedisClusterConnection redisConnection() {
+        return getRedisFactory().getClusterConnection();
+    }
+
+
     public static RedisTemplate<String, String> redisCacheTemplate() {
-        RedisTemplate<String, String> template = new RedisTemplate<>();
+        StringRedisTemplate template = new StringRedisTemplate();
         LettuceConnectionFactory factory = getRedisFactory();
         template.setConnectionFactory(factory);
         template.afterPropertiesSet();
