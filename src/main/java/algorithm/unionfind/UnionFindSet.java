@@ -1,11 +1,13 @@
 package algorithm.unionfind;
 
+import com.alibaba.fastjson.JSON;
 import org.junit.Test;
 
 import java.util.Random;
 
 /**
- * 查并集
+ * 并查集
+ * 时间复杂度为O(N)。
  * created by XUAN on 2019/08/26
  */
 public class UnionFindSet {
@@ -26,27 +28,34 @@ public class UnionFindSet {
     @Test
     public void implementWithArray() {
         Random random =new Random();
-        int size = 50;
-        random.nextInt(size);
-        initArray(50);
-        initRelation(1, 3);
-        initRelation(1, 2);
-        initRelation(2, 3);
-        initRelation(1, 49);
-        initRelation(5, 3);
-        initRelation(43, 20);
-        initRelation(41, 20);
-        initRelation(42, 20);
-        initRelation(42, 2);
+        int size = 1000;
+        initArray(size);
+        // 随机建立size次关系
+        for (int i = 0; i < size; i++) {
+            initRelation(random.nextInt(size), random.nextInt(size));
+        }
 
-        System.out.println(findRelation(1, 30));
-        System.out.println(findRelation(23, 24));
-        System.out.println(findRelation(45,1));
-        System.out.println(findRelation(1,1));
+        System.out.println(JSON.toJSONString(element));
+        // 随机查看是否有关
+        int yes = 0;
+        int no = 0;
+        for (int i = 0; i < size; i++) {
+            int index1 = random.nextInt(size);
+            int index2 = random.nextInt(size);
+            boolean relation = findRelation(index1, index2);
+            if (relation) {
+                yes++;
+            } else {
+                no++;
+            }
+            System.out.println(index1 + " 与 " + index2 + (relation ? " 有" : " 无") + "关");
+        }
+        System.out.println("有关个数: "+ yes + ", 无关个数" + no);
     }
 
     private boolean findRelation(int i, int j) {
-        return findRoot(i) == findRoot(j);
+        int rootI = findRoot(i);
+        return rootI != -1 && rootI == findRoot(j);
     }
 
     private void initRelation(int i, int j) {
@@ -76,13 +85,13 @@ public class UnionFindSet {
     public void initArray (int size) {
         if (element == null) {
             element = new int[size];
-            for (int i : element) {
+            for (int i = 0; i < size; i++) {
                 element[i] = -1;
             }
         }
         if (heights == null) {
             heights = new int[size];
-            for (int i : heights) {
+            for (int i = 0; i < size; i++) {
                 heights[i] = 1;
             }
         }
