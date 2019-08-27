@@ -1,5 +1,6 @@
 package redis;
 
+import io.lettuce.core.protocol.CommandType;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.geo.Circle;
@@ -19,6 +20,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -234,10 +236,39 @@ public class RedisOperations {
     }
 
     /**stream: redis 5.0新增的支持多播的可持久化消息队列
+     * RedisTemplate 貌似还没有支持
+     * TODO: 原生redis命令太难写了, 等待RedisConnection的直接支持吧
      */
     @Test
     public void redisStream() {
+        String value = redisSingle.execute(new RedisCallback<String>() {
 
+            /**
+             * 底层是Lettuce, 所以这里RedisConnection实际上是 LettuceConnection
+             * @param connection
+             * @return
+             * @throws DataAccessException
+             */
+            @Override
+            public String doInRedis(RedisConnection connection) throws DataAccessException {
+                System.out.println();
+                // 加了这行, 不一定会马上发....
+                //connection.openPipeline();
+                byte[][] bytes = new byte[5][];
+                String[] args = "count 1 streams streamtest 1566890652162-0".split(" ");
+                for (int i = 0; i < args.length; i++) {
+                    if(!StringUtils.isEmpty(args[i])) {
+                        bytes[i] = args[i].getBytes();
+                    }
+                }
+                Object value = connection.execute(CommandType.XREAD.name(), bytes);
+                if (value instanceof byte[]) {
+                    return new String((byte[])value);
+                }
+                return value.toString();
+            }
+        });
+        System.out.println(value);
     }
 
 }
