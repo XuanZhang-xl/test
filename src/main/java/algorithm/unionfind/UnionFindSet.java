@@ -54,8 +54,7 @@ public class UnionFindSet {
     }
 
     private boolean findRelation(int i, int j) {
-        int rootI = findRoot(i);
-        return rootI != -1 && rootI == findRoot(j);
+        return findRoot(i) == findRoot(j);
     }
 
     private void initRelation(int i, int j) {
