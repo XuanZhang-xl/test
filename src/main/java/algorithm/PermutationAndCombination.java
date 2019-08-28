@@ -1,10 +1,12 @@
+package algorithm;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
 /**
- * 排列组合
- * 极少有机会用排列组合, 因为时间复杂度太高
+ * 排列组合, 其实就是回溯算法
+ * 极少有机会用排列组合, 因为时间复杂度太高 O(n!)
  * created by XUAN on 2019/7/29
  */
 public class PermutationAndCombination {

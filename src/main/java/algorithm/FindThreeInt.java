@@ -1,4 +1,4 @@
-package test;
+package algorithm;
 
 import org.junit.Test;
 
@@ -8,9 +8,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * 找出三个数之和等于目标数字
  * created by XUAN on 2019/04/29
  */
-public class AlgorithmTest {
+public class FindThreeInt {
 
 
     @Test

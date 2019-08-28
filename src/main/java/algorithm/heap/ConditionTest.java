@@ -1,4 +1,4 @@
-package heap;
+package algorithm.heap;
 
 import org.junit.Test;
 

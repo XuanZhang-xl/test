@@ -1,4 +1,4 @@
-package heap;
+package algorithm.heap;
 
 /**
  * created by XUAN on 2019/3/11

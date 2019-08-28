@@ -1,4 +1,4 @@
-package heap;
+package algorithm.heap;
 
 import java.util.Arrays;
 import java.util.List;

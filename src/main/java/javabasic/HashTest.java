@@ -1,4 +1,4 @@
-package hash;
+package javabasic;
 
 import org.junit.Test;
 

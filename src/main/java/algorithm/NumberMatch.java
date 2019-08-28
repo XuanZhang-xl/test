@@ -1,4 +1,4 @@
-package match;
+package algorithm;
 
 import org.junit.Test;
 

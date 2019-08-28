@@ -1,10 +1,9 @@
-package heap;
+package algorithm.heap;
 
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -15,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * created by XUAN on 2019/3/11
  */
-public class ThreadHolderWithPriorityQueue {
+public class ThreadHolder {
     public static Long[] items = new Long[]{113L, 104L, 6L, 129L, 210L, 9L, 6L, 15L, 1826L, 362L, 31L};
     public static long now = System.currentTimeMillis();
     private Thread thread;
@@ -26,7 +25,7 @@ public class ThreadHolderWithPriorityQueue {
     // 待优化
     ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-    public static PriorityQueue<Task> queue = null;
+    public static BinaryHeap<Task>  heap = null;
     static {
         List<Task> tasks = new ArrayList<Task>();
         for (int i = 0; i < items.length; i++) {
@@ -35,17 +34,19 @@ public class ThreadHolderWithPriorityQueue {
             task.setTime(now + items[i]);
             tasks.add(task);
         }
-        queue = new PriorityQueue<Task>(tasks);
+        heap = new BinaryHeap<Task>(tasks);
     }
 
 
     public void addTask (Task task) {
-        lock.lock();
-        try {
-            queue.add(task);
-            condition.signal();
-        } finally {
-            lock.unlock();
+        if (task != null) {
+            lock.lock();
+            try {
+                heap.insert(task);
+                condition.signal();
+            } finally {
+                lock.unlock();
+            }
         }
     }
 
@@ -60,13 +61,13 @@ public class ThreadHolderWithPriorityQueue {
                     System.out.println("循环开始");
                     lock.lock();
                     try {
-                        while (queue.isEmpty()) {
+                        Task task = null;
+                        while ((task = heap.findMin()) == null) {
                             System.out.println(Thread.currentThread().getName() + "永远睡着, 等待唤醒");
                             condition.await();
                         }
-                        Task task = queue.peek();
                         if (System.currentTimeMillis() >= task.getTime()) {
-                            task = queue.poll();
+                            task = heap.deleteMin();
                             System.out.println(task.getOrderId() + " 任务已提交");
                             executorService.submit(new TaskContainer(task));
                         } else {
