@@ -53,9 +53,14 @@ public class DistinctSubsequences {
 
     @Test
     public void numDistinct1() {
-        String s = "babgbag";
+        //String s = "babgbag";
         String t = "bag";
-        System.out.println("共有" + numDistinctBacktracking1(s, 0, t, 0) + "种方案");
+        String s = "babgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbag";
+        //String t = "bagbagbag";
+        long begin = System.currentTimeMillis();
+        int i = numDistinctBacktracking1(s, 0, t, 0);
+        long end = System.currentTimeMillis();
+        System.out.println("回溯方法1 共有" + i + "种方案, 用时" + (end - begin));
     }
 
     /**
@@ -116,8 +121,9 @@ public class DistinctSubsequences {
      */
     @Test
     public void numDistinct2() {
-//        String s = "babgbag";
+        //String s = "babgbag";
         String s = "babgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbag";
+        //String t = "bagbagbag";
         String t = "bag";
 
         long begin1 = System.currentTimeMillis();
@@ -198,8 +204,9 @@ public class DistinctSubsequences {
 
     /**
      *
-     * 正序, 倒序循环t, 是没有区别的
      * 这里是使用列作为基准统计 (列主序)
+     * 正序, 倒序循环t, 是没有区别的
+     * 下面的这优化方法也可以使用正序, 只要map存的是第一次出现位置, next存之后出现的位置, 最后出现位置存1就可
      *
      *   循环 1  2  3  4  5  6  7
      *    *  b  a  b  g  b  a  g
@@ -259,31 +266,63 @@ public class DistinctSubsequences {
         // dp[0]永远是1，因为不管S多长，都只能找到一个空串，与T相等
         dp[0] = 1;
 
-        //t的字典
+        //t的字典, 取128是因为 所有字符的ASCII码绝对不会超过128
         int[] map = new int[128];
         Arrays.fill(map, -1);
 
-        //从尾部遍历的时候可以遍历 next类似链表 无重复值时为-1，
-        //有重复时例如从rabbit的b开始索引在map[b] = 2 next[2] 指向下一个b的索引为3
+        // 从尾部遍历的时候可以遍历 next类似链表 无重复值时为-1，
+        // 有重复时例如从rabbit的b开始索引在map[b] = 2 next[2] 指向下一个b的索引为3
+        // 这里的map[]与next[]素组都是为了代替下面这个循环+判断
         // for (int j = t.length() - 1; j >= 0; j--) {
         //     if (t.charAt(j) == s.charAt(i)) {
         //        dp[j + 1] += dp[j];
         //     }
         // }
-        //这段代码的寻址就可以从map[s.charAt(i)] 找到索引j 在用next[j] 一直找和 s.charAt(i)相等的字符 其他的就可以跳过了
-        //所以这个代码的优化 关键要理解 上面的一维倒算
+        // 这段代码的寻址就可以从map[s.charAt(i)] 找到索引j 在用next[j] 一直找和 s.charAt(i)相等的字符 其他的就可以跳过了
         int[] nexts = new int[t.length()];
         for (int i = 0; i < t.length(); i++) {
             int c = t.charAt(i);
+            // 如果字符第一次出现, 则对应位置存 -1 , 如果第n次出现, 则存第n-1次(也就是上一次)出现时的位置, 比如
+            //"bagbagbag", 则nexts为 [-1, -1, -1, 0, 1 ,2 ,3 ,4 ,5]
             nexts[i] = map[c];
+            // 这一行代码使map里存的是字符最后一次在t中出现的位置, 比如 b字符在"bag"里最后一次出现是在0位, 则 map[98] = 0
             map[c] = i;
         }
 
         for (int i = 0; i < s.length(); i++) {
+            // 从s中拿出字符, 通过map[]找到该字符在t中出现的最后位置, 再通过nexts[]找出该字符出现的所有位置, 就可以跳过所有无意义的比较判断
+            // 当遍历到该字符第一次出现时, j=-1, 退出循环
             for (int j = map[s.charAt(i)]; j >= 0; j = nexts[j]) {
                 dp[j + 1] += dp[j];
             }
         }
         return dp[t.length()];
     }
+
+    public static void main(String[] args){
+        String data = "abc";
+        char char1 = data.charAt(0);
+        char char2 = data.charAt(1);
+        char char3 = data.charAt(2);
+        int int1 = data.charAt(0);
+        int int2 = data.charAt(1);
+        int int3 = data.charAt(2);
+        int int21 = data.getBytes()[0];
+        int int22 = data.getBytes()[1];
+        int int23 = data.getBytes()[2];
+
+        System.out.println(char1);
+        System.out.println(char2);
+        System.out.println(char3);
+
+        System.out.println(int1);
+        System.out.println(int2);
+        System.out.println(int3);
+
+        System.out.println(int21);
+        System.out.println(int22);
+        System.out.println(int23);
+
+    }
+
 }
