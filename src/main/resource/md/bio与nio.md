@@ -15,11 +15,11 @@ https://www.cnblogs.com/felixzh/p/10345929.html
 
 阻塞IO模型：
 
-![](img/io/iomodel1.png)
+![](../img/io/iomodel1.png)
 
 非阻塞IO模型：
 
-![](img/io/iomodel2.png)
+![](../img/io/iomodel2.png)
 
 
 ### 二. 同步与异步
@@ -38,7 +38,7 @@ IO过程主要分两步：
 
 异步IO的模型如下图：
 
-![](img/io/iomodel3.png)
+![](../img/io/iomodel3.png)
 
 
 ### 三. IO复用模型
@@ -47,10 +47,10 @@ IO过程主要分两步：
 
 这种IO模型比较特别，分个段。因为它能同时监听多个文件描述符(fd)。这个时候C同学来装水，发现有一排水龙头，舍管阿姨告诉他这些水龙头都还没有水，等有水了告诉他。于是等啊等(select调用中)，过了一会阿姨告诉他有水了，但不知道是哪个水龙头有水，自己看吧。于是C同学一个个打开，往杯子里装水(recv)。这里再顺便说说鼎鼎大名的epoll(高性能的代名词啊)，epoll也属于IO复用模型，主要区别在于舍管阿姨会告诉C同学哪几个水龙头有水了，不需要一个个打开看(当然还有其它区别)。
 
-![](img/io/iomodel4.png)
+![](../img/io/iomodel4.png)
 
 ### 四. 总结
-![](img/io/iomodel5.png)
+![](../img/io/iomodel5.png)
 
 *信号驱动io模型貌似在java里没有实现
 
