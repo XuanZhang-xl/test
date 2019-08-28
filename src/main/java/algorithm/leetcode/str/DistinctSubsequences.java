@@ -1,37 +1,41 @@
 package algorithm.leetcode.str;
 
+import org.junit.Test;
+
+import java.util.Arrays;
+
 /**
  * 题目地址:  https://leetcode-cn.com/problems/distinct-subsequences/
  * 题解:      https://mp.weixin.qq.com/s/w8045wiYQcC8jllhO-merg
  * 给定一个字符串 S 和一个字符串 T，计算在 S 的子序列中 T 出现的个数。
- *
+ * <p>
  * 一个字符串的一个子序列是指，通过删除一些（也可以不删除）字符且不干扰剩余字符相对位置所组成的新字符串。（例如，"ACE" 是 "ABCDE" 的一个子序列，而 "AEC" 不是）
- *
+ * <p>
  * 示例 1:
- *
+ * <p>
  * 输入: S = "rabbbit", T = "rabbit"
  * 输出: 3
  * 解释:
- *
+ * <p>
  * 如下图所示, 有 3 种可以从 S 中得到 "rabbit" 的方案。
- * (上箭头符号 ^ 表示选取的字母)
- *
+ * (上箭头符号 ^ 表示选取的字符)
+ * <p>
  * rabbbit
  * ^^^^ ^^
  * rabbbit
  * ^^ ^^^^
  * rabbbit
  * ^^^ ^^^
- *
+ * <p>
  * 示例 2:
- *
+ * <p>
  * 输入: S = "babgbag", T = "bag"
  * 输出: 5
  * 解释:
- *
+ * <p>
  * 如下图所示, 有 5 种可以从 S 中得到 "bag" 的方案。
- * (上箭头符号 ^ 表示选取的字母)
- *
+ * (上箭头符号 ^ 表示选取的字符)
+ * <p>
  * babgbag
  * ^^ ^
  * babgbag
@@ -39,11 +43,247 @@ package algorithm.leetcode.str;
  * babgbag
  * ^    ^^
  * babgbag
- *   ^  ^^
+ * ^  ^^
  * babgbag
- *     ^^^
- *
+ * ^^^
+ * <p>
  * created by XUAN on 2019/8/27
  */
 public class DistinctSubsequences {
+
+    @Test
+    public void numDistinct1() {
+        String s = "babgbag";
+        String t = "bag";
+        System.out.println("共有" + numDistinctBacktracking1(s, 0, t, 0) + "种方案");
+    }
+
+    /**
+     * 使用回溯算法, 时间复杂度很高, 基本会超时
+     *
+     * @param s       母串
+     * @param s_start 从母串s_start位置开始匹配
+     * @param t       子串
+     * @param t_start 从子串的t_start位置开始匹配
+     * @return
+     */
+    private int numDistinctBacktracking1(String s, int s_start, String t, int t_start) {
+        //T 是空串，表示匹配结束且匹配到了, 选法就是 1 种
+        // 这个判断必须在前面, 因为当两个串都匹配完的时候, 是匹配到的, 需要返回1
+        if (t_start == t.length()) {
+            return 1;
+        }
+        //S 是空串，表示匹配结束且没匹配到, 选法是 0 种
+        if (s_start == s.length()) {
+            return 0;
+        }
+        int count = 0;
+        //当前字符相等
+        if (s.charAt(s_start) == t.charAt(t_start)) {
+            // 这时候有两种可能
+            // 1. 匹配完一个字符后, 去匹配下一个字符
+            // 2. 母串在s_start这个字符后面, 还有另外的字符可以匹配t_start
+
+            //从 S 选择当前的字符，此时 S 跳过这个字符, T 也跳过一个字符。
+            count = numDistinctBacktracking1(s, s_start + 1, t, t_start + 1)
+                    //S 不选当前的字符，此时 S 跳过这个字符，T 不跳过字符。
+                    + numDistinctBacktracking1(s, s_start + 1, t, t_start);
+            //当前字符不相等
+        } else {
+            //S 只能不选当前的字符，此时 S 跳过这个字符， T 不跳过字符。
+            count = numDistinctBacktracking1(s, s_start + 1, t, t_start);
+        }
+        return count;
+    }
+
+
+    /**
+     * 使用动态规划算法求解
+     * <p>
+     * 理解:
+     * s = "babgbag"
+     * t = "bag"
+     * <p>
+     *    *  b  a  b  g  b  a  g
+     * *  1  1  1  1  1  1  1  1
+     * b  0  1  1  2  2  3  3  3   这一行代表的是遍历s到某个字符的时候 b 的匹配次数
+     * a  0  0  1  1  1  1  4  4   这一行代表的是遍历s到某个字符的时候 ba 的匹配次数
+     * g  0  0  0  0  1  1  1  5   这一行代表的是遍历s到某个字符的时候 bag 的匹配次数
+     * <p>
+     * 初始化:
+     * 1. t为空时, 表示可以匹配, 所以最后一列都是1, 代表匹配1次
+     * 2. s为空时, 表示不匹配, 所以最后一行都是0, 代表不匹配
+     */
+    @Test
+    public void numDistinct2() {
+//        String s = "babgbag";
+        String s = "babgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbag";
+        String t = "bag";
+
+        long begin1 = System.currentTimeMillis();
+        int i1 = numDistinctDynamicProgramming1(s, t);
+        long end1 = System.currentTimeMillis();
+        System.out.println("动态规划方法1 共有" + i1 + "种方案, 用时" + (end1 - begin1));
+
+        long begin2 = System.currentTimeMillis();
+        int i2 = numDistinctDynamicProgramming2(s, t);
+        long end2 = System.currentTimeMillis();
+        System.out.println("动态规划方法2 共有" + i2 + "种方案, 用时" + (end2 - begin2));
+
+        long begin3 = System.currentTimeMillis();
+        int i3 = numDistinctDynamicProgramming3(s, t);
+        long end3 = System.currentTimeMillis();
+        System.out.println("动态规划方法3 共有" + i3 + "种方案, 用时" + (end3 - begin3));
+
+        long begin4 = System.currentTimeMillis();
+        int i4 = numDistinctDynamicProgramming4(s, t);
+        long end4 = System.currentTimeMillis();
+        System.out.println("动态规划方法4 共有" + i4 + "种方案, 用时" + (end4 - begin4));
+    }
+
+    public int numDistinctDynamicProgramming1(String s, String t) {
+        int[][] dp = new int[t.length() + 1][s.length() + 1];
+        //初始化第一行
+        for (int j = 0; j <= s.length(); j++) {
+            dp[0][j] = 1;
+        }
+
+        for (int i = 1; i <= t.length(); i++) {
+            for (int j = 1; j <= s.length(); j++) {
+                if (t.charAt(i - 1) == s.charAt(j - 1)) {
+                    //对应于两种情况，选择当前字符和不选择当前字符
+                    dp[i][j] = dp[i - 1][j - 1] + dp[i][j - 1];
+                } else {
+                    // 当前字符不相等, 不选择当前字符
+                    dp[i][j] = dp[i][j - 1];
+                }
+            }
+        }
+        return dp[t.length()][s.length()];
+    }
+
+
+    /**
+     * 二维换一维 严格按照二维的流程 参见上面矩阵
+     * 只要额外一个变量记录上面方法1的 dp[i-1][j-1] 这个变量就可以, 这样可以大幅减少空间复杂度
+     *
+     * @param s
+     * @param t
+     * @return
+     */
+    public int numDistinctDynamicProgramming2(String s, String t) {
+        int[] dp = new int[s.length() + 1];
+        Arrays.fill(dp, 1);
+        int pre = 1;
+        //每行算一次
+        for (int i = 1; i <= t.length(); i++) {
+            //0-n算n+1次
+            for (int j = 0; j <= s.length(); j++) {
+                //先保存dp[j]下次用
+                int temp = dp[j];
+                if (j == 0) {
+                    dp[j] = 0;
+                } else {
+                    if (t.charAt(i - 1) == s.charAt(j - 1)) {
+                        dp[j] = pre + dp[j - 1];
+                    } else {
+                        dp[j] = dp[j - 1];
+                    }
+                }
+                pre = temp;
+            }
+        }
+        return dp[s.length()];
+    }
+
+    /**
+     *
+     * 正序, 倒序循环t, 是没有区别的
+     * 这里是使用列作为基准统计 (列主序)
+     *
+     *   循环 1  2  3  4  5  6  7
+     *    *  b  a  b  g  b  a  g
+     * *  1  1  1  1  1  1  1  1
+     * b  0  1  1  2  2  3  3  3
+     * a  0  0  1  1  1  1  4  4
+     * g  0  0  0  0  1  1  1  5
+     *
+     * 1~7列为7次循环
+     * 初始:    第一次循环b:  第二次循环a:  第三次循环b:  第四次循环g:  第五次循环b:  第六次循环a:  第七次循环g:
+     * * 1       * 1         * 1         * 1           * 1          * 1          * 1          * 1
+     * b 0       b 1         b 1         b 2           b 2          b 3          b 3          b 3
+     * a 0       a 0         a 1         a 1           a 1          a 1          a 4          a 4
+     * g 0       g 0         g 0         g 0           g 1          g 1          g 1          g 5
+     *
+     * @param s
+     * @param t
+     * @return
+     */
+    public int numDistinctDynamicProgramming3(String s, String t) {
+        // dp[0]表示空串
+        int[] dp = new int[t.length() + 1];
+        // dp[0]永远是1，因为不管S多长，都只能找到一个空串，与T相等
+        dp[0] = 1;
+
+        // 倒序
+        //for (int i = 0; i < s.length(); i++) {
+        //    for (int j = t.length() - 1; j >= 0; j--) {
+        //        if (t.charAt(j) == s.charAt(i)) {
+        //            dp[j + 1] += dp[j];
+        //        }
+        //    }
+        //}
+
+        // 正序
+        for (int i = 0; i < s.length(); i++) {
+            for (int j = 0; j < t.length(); j++) {
+                if (t.charAt(j) == s.charAt(i)) {
+                    dp[j + 1] += dp[j];
+                }
+            }
+        }
+        return dp[t.length()];
+    }
+
+    /**
+     * 列主序 先构造字典 就不用遍历t了
+     * 这样就优化成了答案上的2ms的了
+     *
+     * @param s
+     * @param t
+     * @return
+     */
+    public int numDistinctDynamicProgramming4(String s, String t) {
+        // dp[0]表示空串
+        int[] dp = new int[t.length() + 1];
+        // dp[0]永远是1，因为不管S多长，都只能找到一个空串，与T相等
+        dp[0] = 1;
+
+        //t的字典
+        int[] map = new int[128];
+        Arrays.fill(map, -1);
+
+        //从尾部遍历的时候可以遍历 next类似链表 无重复值时为-1，
+        //有重复时例如从rabbit的b开始索引在map[b] = 2 next[2] 指向下一个b的索引为3
+        // for (int j = t.length() - 1; j >= 0; j--) {
+        //     if (t.charAt(j) == s.charAt(i)) {
+        //        dp[j + 1] += dp[j];
+        //     }
+        // }
+        //这段代码的寻址就可以从map[s.charAt(i)] 找到索引j 在用next[j] 一直找和 s.charAt(i)相等的字符 其他的就可以跳过了
+        //所以这个代码的优化 关键要理解 上面的一维倒算
+        int[] nexts = new int[t.length()];
+        for (int i = 0; i < t.length(); i++) {
+            int c = t.charAt(i);
+            nexts[i] = map[c];
+            map[c] = i;
+        }
+
+        for (int i = 0; i < s.length(); i++) {
+            for (int j = map[s.charAt(i)]; j >= 0; j = nexts[j]) {
+                dp[j + 1] += dp[j];
+            }
+        }
+        return dp[t.length()];
+    }
 }
