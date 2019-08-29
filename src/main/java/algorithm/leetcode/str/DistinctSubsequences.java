@@ -3,6 +3,8 @@ package algorithm.leetcode.str;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 题目地址:  https://leetcode-cn.com/problems/distinct-subsequences/
@@ -54,13 +56,23 @@ public class DistinctSubsequences {
     @Test
     public void numDistinct1() {
         //String s = "babgbag";
-        String t = "bag";
+        //String t = "bag";
         String s = "babgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbag";
-        //String t = "bagbagbag";
-        long begin = System.currentTimeMillis();
-        int i = numDistinctBacktracking1(s, 0, t, 0);
-        long end = System.currentTimeMillis();
-        System.out.println("回溯方法1 共有" + i + "种方案, 用时" + (end - begin));
+        String t = "bagbagbag";
+        //long begin1 = System.currentTimeMillis();
+        //int i1 = numDistinctBacktracking1(s, 0, t, 0);
+        //long end1 = System.currentTimeMillis();
+        //System.out.println("回溯方法1 共有" + i1 + "种方案, 用时" + (end1 - begin1));
+
+        long begin2 = System.currentTimeMillis();
+        int i2 = numDistinctBacktracking2(s, 0, t, 0);
+        long end2 = System.currentTimeMillis();
+        System.out.println("回溯方法2 共有" + i2 + "种方案, 用时" + (end2 - begin2));
+
+        long begin3 = System.currentTimeMillis();
+        int i3 = numDistinctBacktracking3(s, 0, t, 0);
+        long end3 = System.currentTimeMillis();
+        System.out.println("回溯方法3 共有" + i3 + "种方案, 用时" + (end3 - begin3));
     }
 
     /**
@@ -101,6 +113,66 @@ public class DistinctSubsequences {
         return count;
     }
 
+    Map<String, Integer> cache = new HashMap<>();
+    private int numDistinctBacktracking2(String s, int s_start, String t, int t_start) {
+        if (t_start == t.length()) {
+            return 1;
+        }
+        if (s_start == s.length()) {
+            return 0;
+        }
+        Integer count = 0;
+        int s_startTemp = s_start + 1;
+        String key1 = s_startTemp + "_" + t_start;
+        if (s.charAt(s_start) == t.charAt(t_start)) {
+            int t_startTemp = t_start + 1;
+            String key2 = s_startTemp + "_" + t_startTemp;
+            Integer cachedCount1 = cache.get(key1);
+            Integer cachedCount2 = cache.get(key2);
+            if (cachedCount1 == null) {
+                cachedCount1 = numDistinctBacktracking2(s, s_start + 1, t, t_start);
+                cache.put(key1, cachedCount1);
+            }
+            if (cachedCount2 == null) {
+                cachedCount2 = numDistinctBacktracking2(s, s_start + 1, t, t_start + 1);
+                cache.put(key2, cachedCount2);
+            }
+
+            count = cachedCount1 + cachedCount2;
+        } else {
+            count = cache.get(key1);
+            if (count == null) {
+                count = numDistinctBacktracking2(s, s_start + 1, t, t_start);
+                cache.put(key1, count);
+            }
+        }
+        return count;
+    }
+
+    Map<String, Integer> cache2 = new HashMap<>();
+    private int numDistinctBacktracking3(String s, int s_start, String t, int t_start) {
+        if (t_start == t.length()) {
+            return 1;
+        }
+        if (s_start == s.length()) {
+            return 0;
+        }
+        int count = 0;
+        String key = s_start + "_" + t_start;
+        //先判断之前有没有求过这个解
+        if (cache2.containsKey(key)) {
+            return cache2.get(key);
+        }
+        if (s.charAt(s_start) == t.charAt(t_start)) {
+            count = numDistinctBacktracking3(s, s_start + 1, t, t_start + 1)
+                    + numDistinctBacktracking3(s, s_start + 1, t, t_start);
+        } else {
+            count = numDistinctBacktracking3(s, s_start + 1, t, t_start);
+        }
+        cache2.put(key, count);
+        return count;
+    }
+
 
     /**
      * 使用动态规划算法求解
@@ -121,8 +193,8 @@ public class DistinctSubsequences {
      */
     @Test
     public void numDistinct2() {
-        //String s = "babgbag";
-        String s = "babgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbag";
+        String s = "babgbagbabgbag";
+        //String s = "babgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbagbabgbag";
         //String t = "bagbagbag";
         String t = "bag";
 
@@ -207,6 +279,7 @@ public class DistinctSubsequences {
      * 这里是使用列作为基准统计 (列主序)
      * 正序, 倒序循环t, 是没有区别的
      * 下面的这优化方法也可以使用正序, 只要map存的是第一次出现位置, next存之后出现的位置, 最后出现位置存1就可
+     * 时间复杂度O(NM)
      *
      *   循环 1  2  3  4  5  6  7
      *    *  b  a  b  g  b  a  g
@@ -221,6 +294,17 @@ public class DistinctSubsequences {
      * b 0       b 1         b 1         b 2           b 2          b 3          b 3          b 3
      * a 0       a 0         a 1         a 1           a 1          a 1          a 4          a 4
      * g 0       g 0         g 0         g 0           g 1          g 1          g 1          g 5
+     *
+     *
+     *   循环 1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
+     *    *  b  a  b  g  b  a  g  b  a  b  g  b  a  g  t
+     * *  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+     * b  0  1  1  2  2  3  3  3  4  4  5  5  6  6  6  6
+     * a  0  0  1  1  1  1  4  4  4  8  8  8  8  14 14 14
+     * g  0  0  0  0  1  1  1  5  5  5  5  13 13 13 27 27
+     * b  0  0  0  0  0  1  1  1  6  6  11 11 24 24 24 24
+     * t  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  24
+     *
      *
      * @param s
      * @param t
@@ -255,6 +339,7 @@ public class DistinctSubsequences {
     /**
      * 列主序 先构造字典 就不用遍历t了
      * 这样就优化成了答案上的2ms的了
+     * 时间复杂度O(N) ~ O(NM)
      *
      * @param s
      * @param t
@@ -272,7 +357,7 @@ public class DistinctSubsequences {
 
         // 从尾部遍历的时候可以遍历 next类似链表 无重复值时为-1，
         // 有重复时例如从rabbit的b开始索引在map[b] = 2 next[2] 指向下一个b的索引为3
-        // 这里的map[]与next[]素组都是为了代替下面这个循环+判断
+        // 这里的map[]与next[]数组都是为了代替下面这个循环+判断
         // for (int j = t.length() - 1; j >= 0; j--) {
         //     if (t.charAt(j) == s.charAt(i)) {
         //        dp[j + 1] += dp[j];
@@ -285,7 +370,7 @@ public class DistinctSubsequences {
             // 如果字符第一次出现, 则对应位置存 -1 , 如果第n次出现, 则存第n-1次(也就是上一次)出现时的位置, 比如
             //"bagbagbag", 则nexts为 [-1, -1, -1, 0, 1 ,2 ,3 ,4 ,5]
             nexts[i] = map[c];
-            // 这一行代码使map里存的是字符最后一次在t中出现的位置, 比如 b字符在"bag"里最后一次出现是在0位, 则 map[98] = 0
+            // 这一行代码使map里存的是字符最后一次在t中出现的位置, 比如 b字符在"bagbagbag"里最后一次出现是在6位, 则 map[98] = 6
             map[c] = i;
         }
 
