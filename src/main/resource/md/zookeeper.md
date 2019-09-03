@@ -8,6 +8,16 @@ create [-s] [-e] /path data 创建一个节点.
 ls /path 查看子节点
 
 get /path 查看节点状态
+- cZxid
+- ctime
+- mZxid
+- mtime
+- cversion
+- dataVersion
+- aclVersion
+- dataLength
+- numChildren
+- ephemeralOwner
 
 set path data [version] 设置值, 乐观锁
 
