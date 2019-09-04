@@ -7,18 +7,12 @@
     <groupId>xl</groupId>
     <artifactId>test</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>8</source>
-                    <target>8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <dubbo.version>2.7.3</dubbo.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.alibaba</groupId>
@@ -149,5 +143,25 @@
             <artifactId>easyexcel</artifactId>
             <version>1.1.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo</artifactId>
+            <version>2.7.3</version>
+        </dependency>
+
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
