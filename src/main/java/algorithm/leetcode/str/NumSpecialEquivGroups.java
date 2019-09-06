@@ -62,7 +62,6 @@ import java.util.Set;
  * 链接：https://leetcode-cn.com/problems/groups-of-special-equivalent-strings
  * 著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
  *
- * TODO:待改进
  * created by XUAN on 2019/9/6
  */
 public class NumSpecialEquivGroups {
@@ -82,70 +81,28 @@ public class NumSpecialEquivGroups {
         if (strings == null || strings.length == 0) {
             return 0;
         }
-        // 根节点
-        List<Integer> roots = new ArrayList<>();
-        // 第0个元素直接作为根节点
-        roots.add(0);
-
-        for (int i = 1; i < strings.length; i++) {
+        List<String> roots = new ArrayList<>();
+        for (int i = 0; i < strings.length; i++) {
             String newStr = strings[i];
-            boolean unique = true;
-            for (Integer root : roots) {
-                String rootString = strings[root];
-                if (isSpecialEqual(newStr, rootString)) {
-                    unique = false;
-                }
+            int length = newStr.length();
+            char[] sorted = new char[length];
+            int index = 0;
+            for (int j = 0; j < length; j = j + 2) {
+                sorted[index] = newStr.charAt(j);
+                index++;
             }
-            if (unique) {
-                // 新根节点
-                roots.add(i);
-                ArrayList<String> list2 = new ArrayList<>();
-                list2.add(newStr);
+            Arrays.sort(sorted, 0, index);
+            int temp = index;
+            for (int j = 1; j < length; j = j + 2) {
+                sorted[index] = newStr.charAt(j);
+                index++;
+            }
+            Arrays.sort(sorted, temp, index);
+            String s = new String(sorted);
+            if (!roots.contains(s)) {
+                roots.add(s);
             }
         }
         return roots.size();
-    }
-
-    /**
-     * 判断是否特殊相等
-     *
-     * 1. 奇数位上的字符种类完全一样
-     * 2. 偶数位上的字符种类完全一样
-     *
-     * @param newStr
-     * @param rootString
-     * @return
-     */
-    private boolean isSpecialEqual(String newStr, String rootString) {
-        if ("".equals(newStr) && "".equals(rootString)) {
-            return true;
-        }
-        if (newStr.length() != rootString.length()) {
-            return false;
-        }
-
-        int length = newStr.length();
-        char[] sorted1 = new char[length];
-        char[] sorted2 = new char[length];
-        int index = 0;
-        for (int i = 0; i < length; i = i + 2) {
-            sorted1[index] = newStr.charAt(i);
-            sorted2[index] = rootString.charAt(i);
-            index++;
-        }
-        Arrays.sort(sorted1, 0, index);
-        Arrays.sort(sorted2, 0, index);
-        if (!new String(sorted1).equals(new String(sorted2))) {
-            return false;
-        }
-        int temp = index;
-        for (int i = 1; i < length; i = i + 2) {
-            sorted1[index] = newStr.charAt(i);
-            sorted2[index] = rootString.charAt(i);
-            index++;
-        }
-        Arrays.sort(sorted1, temp, index);
-        Arrays.sort(sorted2, temp, index);
-        return new String(sorted1).equals(new String(sorted2));
     }
 }
