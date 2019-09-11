@@ -1,18 +1,34 @@
 package framework.solr;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.document.*;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.index.*;
+import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.FuzzyQuery;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.highlight.Formatter;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.Version;
+import org.apache.poi.util.LongField;
 import org.junit.Test;
 import org.wltea.analyzer.lucene.IKAnalyzer;
 
@@ -38,14 +54,14 @@ public class LuenceTest {
         doc.add(new StoredField("url", "www.sina.com"));
 
         //创建文件目录
-        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall"));
+        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall").toPath());
         //创建分词器
         //Analyzer analyzer = new StandardAnalyzer();
         //使用IK分词器
         Analyzer analyzer = new IKAnalyzer();
 
         //索引写出工具的配置对象
-        IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, analyzer);
+        IndexWriterConfig config = new IndexWriterConfig(analyzer);
         //设置打开方式:
         /**CREATE_OR_APPEND:
          * Creates a new index if one does not exist,
@@ -80,18 +96,18 @@ public class LuenceTest {
         String[] strArr = {"谷歌地图之父跳槽facebook", "谷歌地图之父加盟FaceBook", "谷歌地图创始人拉斯离开谷歌加盟Facebook", "谷歌地图之父跳槽Facebook与Wave项目取消有关", "谷歌地图之父拉斯加盟社交网站Facebook"};
         for (int i = 1; i <= strArr.length; i++) {
             Document doc = new Document();
-            //doc.add(new StringField("id", i + "", Store.YES));
-            doc.add(new LongField("id", (long) i, Store.YES));
+            doc.add(new StringField("id", i + "", Store.YES));
+            //doc.add(new LongField("id", (long) i, Store.YES));
             doc.add(new TextField("title", strArr[i - 1], Store.YES));
             docs.add(doc);
         }
 
         // 索引目录类,指定索引在硬盘中的位置
-        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall"));
+        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall").toPath());
         // 引入IK分词器
         Analyzer analyzer = new IKAnalyzer();
         // 索引写出工具的配置对象
-        IndexWriterConfig conf = new IndexWriterConfig(Version.LATEST, analyzer);
+        IndexWriterConfig conf = new IndexWriterConfig(analyzer);
         // 设置打开方式：OpenMode.APPEND 会在索引库的基础上追加新索引。OpenMode.CREATE会先清空原来数据，再提交新的索引
         conf.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 
@@ -110,7 +126,7 @@ public class LuenceTest {
     @Test
     public void testSearch() throws Exception {
         // 索引目录类,指定索引在硬盘中的位置
-        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall"));
+        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall").toPath());
 
         // 索引读取工具
         IndexReader reader = DirectoryReader.open(directory);
@@ -147,7 +163,7 @@ public class LuenceTest {
     /*抽取查询数据的通用方法*/
     public void search(Query query) throws Exception {
         // 索引目录对象
-        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall"));
+        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall").toPath());
         // 索引读取工具
         IndexReader reader = DirectoryReader.open(directory);
         // 索引搜索工具
@@ -218,7 +234,7 @@ public class LuenceTest {
     @Test
     public void testNumericRangeQuery() throws Exception {
         // 数值范围查询对象，参数：字段名称，最小值、最大值、是否包含最小值、是否包含最大值
-        NumericRangeQuery<Long> query = NumericRangeQuery.newLongRange("id", 2L, 2L, true, true);//找不到,因为数据库中的id是String.
+        Query query = LongPoint.newRangeQuery("id", 2L, 2L);//找不到,因为数据库中的id是String.
         search(query);
     }
 
@@ -231,14 +247,13 @@ public class LuenceTest {
     @Test
     public void testBooleanQuery() throws Exception {
 
-        Query query1 = NumericRangeQuery.newLongRange("id", 1L, 3L, true, true);
-        Query query2 = NumericRangeQuery.newLongRange("id", 2L, 4L, true, true);
-        // 创建布尔查询的对象
-        BooleanQuery query = new BooleanQuery();
-        // 组合其它查询
-        query.add(query1, BooleanClause.Occur.MUST);
-        query.add(query2, BooleanClause.Occur.MUST_NOT);
+        Query query1 = LongPoint.newRangeQuery("id", 1L, 3L);
+        Query query2 = LongPoint.newRangeQuery("id", 2L, 4L);
+        BooleanClause booleanClause1 = new BooleanClause(query1, BooleanClause.Occur.MUST);
+        BooleanClause booleanClause2 = new BooleanClause(query2, BooleanClause.Occur.MUST_NOT);
 
+        // 创建布尔查询的对象
+        BooleanQuery query = new BooleanQuery.Builder().add(booleanClause1).add(booleanClause2).build();
         search(query);
     }
 
@@ -255,9 +270,9 @@ public class LuenceTest {
     @Test
     public void testUpdate() throws Exception {
         // 创建目录对象
-        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall"));
+        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall").toPath());
         // 创建配置对象
-        IndexWriterConfig conf = new IndexWriterConfig(Version.LATEST, new IKAnalyzer());
+        IndexWriterConfig conf = new IndexWriterConfig(new IKAnalyzer());
         // 创建索引写出工具
         IndexWriter writer = new IndexWriter(directory, conf);
 
@@ -285,9 +300,9 @@ public class LuenceTest {
     @Test
     public void testDelete() throws Exception {
         // 创建目录对象
-        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall"));
+        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall").toPath());
         // 创建配置对象
-        IndexWriterConfig conf = new IndexWriterConfig(Version.LATEST, new IKAnalyzer());
+        IndexWriterConfig conf = new IndexWriterConfig(new IKAnalyzer());
         // 创建索引写出工具
         IndexWriter writer = new IndexWriter(directory, conf);
 
@@ -310,7 +325,7 @@ public class LuenceTest {
     @Test
     public void testHighlighter() throws Exception {
         // 目录对象
-        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall"));
+        Directory directory = FSDirectory.open(new File("D:\\07_temp\\lucenelukeall").toPath());
         // 创建读取工具
         IndexReader reader = DirectoryReader.open(directory);
         // 创建搜索工具
