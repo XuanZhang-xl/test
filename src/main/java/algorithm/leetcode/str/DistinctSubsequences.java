@@ -49,6 +49,9 @@ import java.util.Map;
  * babgbag
  * ^^^
  * <p>
+ *
+ *     TODO: 输出这些字串的位置信息
+ *     如： [0, 1, 3], [0, 1, 6], [0, 5, 6] 等
  * created by XUAN on 2019/8/27
  */
 public class DistinctSubsequences {

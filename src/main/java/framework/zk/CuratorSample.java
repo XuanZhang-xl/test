@@ -23,7 +23,7 @@ import java.util.concurrent.CountDownLatch;
 public class CuratorSample {
 
     public static void main(String[] args) throws Exception {
-        CuratorOperator curatorOperator = new CuratorOperator();
+        CuratorOperator curatorOperator = new CuratorOperator("workspace");
         CuratorFramework operator = curatorOperator.curatorFramework;
 
         System.out.println("当前客户端状态: " + operator.getState().name());

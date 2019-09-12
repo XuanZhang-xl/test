@@ -17,7 +17,7 @@ public class CuratorOperator {
 
     public CuratorFramework curatorFramework = null;
 
-    public CuratorOperator() {
+    public CuratorOperator(String namespace) {
 
         // baseSleepTimeMs初始重试时间, 重试次数越多, 重试间隔事件越长, 这里最多5次重试
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 5);
@@ -42,7 +42,7 @@ public class CuratorOperator {
                 .sessionTimeoutMs(timeout)
                 .retryPolicy(retryPolicy)
                 // 根节点下会创建workspace节点
-                .namespace("workspace")
+                .namespace(namespace)
                 .build();
     }
 }

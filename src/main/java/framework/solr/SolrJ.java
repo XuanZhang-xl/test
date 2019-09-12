@@ -2,13 +2,14 @@ package framework.solr;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrServer;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,10 +18,15 @@ import java.util.Set;
  * Created by MSI-PC on 2017/5/24.
  */
 public class SolrJ {
+
+    HttpSolrClient server = new HttpSolrClient.Builder()
+            .withBaseSolrUrl("http://localhost:8080/solr/core1")
+            .withConnectionTimeout(3000)
+            .withSocketTimeout(5000).build();
+
     @Test
     public void testWriteDocument() throws Exception {
-        //连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
+
         //创建Solr的输入Document
         SolrInputDocument doc = new SolrInputDocument();
         //添加字段
@@ -37,9 +43,6 @@ public class SolrJ {
 
     @Test
     public void testWriteBean() throws Exception {
-        //连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
-
         Item item = new Item(16L, "Duang手机,加了特效的手机", 100000000L);
 
         //添加Document到server
@@ -50,8 +53,8 @@ public class SolrJ {
 
     @Test
     public void testDelete() throws Exception {
-        // 连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
+
+
         // 根据ID删除数据，注意这里需要传字符串
         //server.deleteById("16");
 
@@ -63,8 +66,6 @@ public class SolrJ {
 
     @Test
     public void testDeleteAll() throws Exception {
-        // 连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
 
         // 删除所有,所有字段的所有内容
         server.deleteByQuery("*:*");
@@ -74,8 +75,6 @@ public class SolrJ {
 
     @Test
     public void testQueryByDocument() throws Exception {
-        // 连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
         // 创建查询对象：SolrQuery
         SolrQuery query = new SolrQuery("title:Apple");
         // 执行查询,获取响应
@@ -95,8 +94,6 @@ public class SolrJ {
 
     @Test
     public void testQueryByBean() throws Exception {
-        // 连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
         // 创建查询对象：SolrQuery
         SolrQuery query = new SolrQuery("title:Apple");
         // 执行查询,获取响应
@@ -114,9 +111,7 @@ public class SolrJ {
         }
     }
     @Test
-    public void testByBoolean() throws SolrServerException {
-        // 连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
+    public void testByBoolean() throws SolrServerException, IOException {
         //OR,AND,NOT布尔操作,用大写
         SolrQuery query = new SolrQuery("title:Apple OR title:小米");
 
@@ -131,9 +126,7 @@ public class SolrJ {
 
     //相似度查询,与luence一样
     @Test
-    public void testFuzzyQuery() throws SolrServerException{
-        // 连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
+    public void testFuzzyQuery() throws SolrServerException, IOException {
         //在后面加~就表示相似度查询,2表示可以错2个地方
         SolrQuery query = new SolrQuery("title:adplr~2");
 
@@ -147,8 +140,6 @@ public class SolrJ {
     }
     @Test
     public void testSortedQuery() throws Exception {
-        // 连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
         // 创建查询对象：SolrQuery
         SolrQuery query = new SolrQuery("title:华为");
         // 设置查询的排序参数,参数： 排序的字段名、排序方式
@@ -171,14 +162,12 @@ public class SolrJ {
 
     //分页查询
     @Test
-    public void testPageQuery() throws SolrServerException {
+    public void testPageQuery() throws SolrServerException, IOException {
         //准备分页
         int pageNum = 3;//要查询的页数
         int pageSize = 5;//煤业显示条数
         int start = (pageNum - 1) * pageSize;// 当前页的起始条数
 
-        // 连接Solr服务器
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
         // 创建查询对象：SolrQuery
         SolrQuery query = new SolrQuery("title:手机");
         // 设置按ID排序，方便查看分页信息
@@ -205,8 +194,6 @@ public class SolrJ {
     // 查询索引并且高亮：
     @Test
     public void testHighlightingQuery() throws Exception {
-        // 连接Solr服务器,需要指定地址：我们可以直接从浏览器复制地址。要删除#
-        HttpSolrServer server = new HttpSolrServer("http://localhost:8080/solr/core1");
         // 创建查询对象
         SolrQuery query = new SolrQuery("title:华为");
         // 设置高亮的标签
