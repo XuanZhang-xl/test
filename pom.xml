@@ -154,14 +154,20 @@
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
-            <version>6.8.2</version>
+            <version>6.8.3</version>
         </dependency>
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>transport</artifactId>
-            <version>6.8.2</version>
+            <version>6.8.3</version>
         </dependency>
 
+        <!--fastjson bug太多, 尝试使用jackson-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.9.9.3</version>
+        </dependency>
     </dependencies>
 
     <build>
