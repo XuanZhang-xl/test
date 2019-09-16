@@ -220,14 +220,18 @@ public class SearchApi {
 
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
         queryBuilder
-                .must(QueryBuilders.matchQuery("message", "es"))
-                //.must(QueryBuilders.termsQuery("user", "kimchy"))
                 .should(QueryBuilders.termsQuery("awesome", "absolutely"))
+                .should(QueryBuilders.matchQuery("message", "es"))
+                //.must(QueryBuilders.matchQuery("message", "es"))
+        //.must(QueryBuilders.termsQuery("user", "kimchy"))
         ;
 
         BoolQueryBuilder subQueryBuilder = QueryBuilders.boolQuery();
-        subQueryBuilder.should(QueryBuilders.termsQuery("awesome", "relative"));
-        //queryBuilder.must(subQueryBuilder);
+        subQueryBuilder
+                //.should(QueryBuilders.termsQuery("awesome", "relative"))
+                .must(QueryBuilders.termsQuery("user", "kimchy"))
+        ;
+        queryBuilder.must(subQueryBuilder);
 
 
         SearchResponse searchResponse = client.prepareSearch(index)

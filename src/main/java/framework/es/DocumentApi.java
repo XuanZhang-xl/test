@@ -247,6 +247,43 @@ public class DocumentApi {
         System.out.println("新数据为 " + mapper.writeValueAsString(getResponse.getSource()));
     }
 
+    /**
+     * 并发更新控制
+     * @throws Exception
+     */
+    @Test
+    public void concurrentUpdateApi() throws Exception {
+        GetResponse getResponse = client.prepareGet(index, type, id).get();
+        if (getResponse.isExists()) {
+            System.out.println("原数据为 " + mapper.writeValueAsString(getResponse.getSource()));
+        } else {
+            return;
+        }
+
+        UpdateResponse updateResponse1 = client.prepareUpdate(index, type, id)
+                .setScript(new Script( "ctx._source.user = \"xuan1\""))
+                .setVersion(getResponse.getVersion())
+                .get();
+        if (updateResponse1.status().getStatus() == 200) {
+            System.out.println("updateResponse1更新成功");
+            GetResponse getResponse1 = client.prepareGet(index, type, id).get();
+            System.out.println("新数据为 " + mapper.writeValueAsString(getResponse1.getSource()));
+        } else {
+            System.out.println("updateResponse1更新失败" + updateResponse1.status().getStatus());
+        }
+        UpdateResponse updateResponse2 = client.prepareUpdate(index, type, id)
+                .setScript(new Script( "ctx._source.user = \"xuan2\""))
+                .setVersion(getResponse.getVersion())
+                .get();
+        if (updateResponse2.status().getStatus() == 200) {
+            System.out.println("updateResponse2更新成功");
+            GetResponse getResponse2 = client.prepareGet(index, type, id).get();
+            System.out.println("新数据为 " + mapper.writeValueAsString(getResponse2.getSource()));
+        } else {
+            System.out.println("updateResponse2更新失败" + updateResponse2.status().getStatus());
+        }
+    }
+
     @Test
     public void multiGetApi() throws Exception {
         MultiGetResponse multiGetItemResponses = client.prepareMultiGet()
