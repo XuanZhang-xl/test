@@ -22,7 +22,7 @@ public class BinaryHeap<T extends Comparable> {
     /**
      * 堆对象
      */
-    private T[] items;
+    private Comparable[] items;
 
     /**
      * 初始容量
@@ -54,7 +54,7 @@ public class BinaryHeap<T extends Comparable> {
      * @return 最小元素
      */
     public T findMin () {
-        return items[1];
+        return (T) items[1];
     }
 
     /**
@@ -100,7 +100,7 @@ public class BinaryHeap<T extends Comparable> {
      */
     private void percolateDown (int hole) {
         int child;
-        T tmp = items[hole];
+        T tmp = (T) items[hole];
         for (; hole << 1 <= currentSize; hole = child) {
             child = hole << 1;
             // 不是末尾元素且 选出左右子元素中小的那个
@@ -145,7 +145,7 @@ public class BinaryHeap<T extends Comparable> {
 
     public BinaryHeap(T[] originalItems) {
         this.currentSize = originalItems.length;
-        this.items = (T[])new Comparable[(currentSize + 2) * 11 / 10];
+        this.items = new Comparable[(currentSize + 2) * 11 / 10];
         int i = 1;
         for (T item : originalItems) {
             this.items[i++] = item;
@@ -156,7 +156,7 @@ public class BinaryHeap<T extends Comparable> {
 
     public BinaryHeap(List<T> originalItems) {
         this.currentSize = originalItems.size();
-        this.items = (T[])new Comparable[(currentSize + 2) * 11 / 10];
+        this.items = new Comparable[(currentSize + 2) * 11 / 10];
         int i = 1;
         for (T item : originalItems) {
             this.items[i++] = item;
@@ -168,7 +168,7 @@ public class BinaryHeap<T extends Comparable> {
     public BinaryHeap() {
         this.currentSize = 0;
         this.capacity = DEFAULT_CAPACITY;
-        this.items = (T[])new Comparable[DEFAULT_CAPACITY];
+        this.items = new Comparable[DEFAULT_CAPACITY];
     }
 
 
