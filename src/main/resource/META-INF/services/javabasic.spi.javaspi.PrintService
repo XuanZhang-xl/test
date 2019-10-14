@@ -1,2 +1,2 @@
-javabasic.spi.javaspi.PrintHelloWorldService
-javabasic.spi.javaspi.PrintHelloXlService
+xl.test.javabasic.spi.javaspi.PrintHelloWorldService
+xl.test.javabasic.spi.javaspi.PrintHelloXlService

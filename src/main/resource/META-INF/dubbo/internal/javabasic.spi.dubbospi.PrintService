@@ -1,3 +1,3 @@
-printServiceImpl=javabasic.spi.dubbospi.PrintHelloXlService
-printServiceImpl2=javabasic.spi.dubbospi.PrintHelloWorldService
-wrapper=javabasic.spi.dubbospi.PrintHelloXlWrapperService
+printServiceImpl=xl.test.javabasic.spi.dubbospi.PrintHelloXlService
+printServiceImpl2=xl.test.javabasic.spi.dubbospi.PrintHelloWorldService
+wrapper=xl.test.javabasic.spi.dubbospi.PrintHelloXlWrapperService
