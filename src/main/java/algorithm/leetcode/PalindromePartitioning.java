@@ -1,5 +1,6 @@
 package algorithm.leetcode;
 
+import algorithm.leetcode.utils.StringUtil;
 import org.junit.Test;
 import org.springframework.util.StringUtils;
 
@@ -29,62 +30,50 @@ import java.util.List;
  */
 public class PalindromePartitioning {
 
+    private static final String[] TEST_STRINGS = new String[]{
+            //"aaaa",
+            //"abccb",
+            //"qwertyyyytrewq",
+            //"aba",
+            //"asdsaxssxasss",
+            //"qwerty",
+            "cbbbcc"
+    };
+
+
+    /**
+     * 回溯算法
+     */
     @Test
-    public void partition () {
-        System.out.println(partition("aaaa"));
-        System.out.println(partition("abccb"));
-        System.out.println(partition("qwertyyyytrewq"));
-        System.out.println(partition("aba"));
-        System.out.println(partition("asdsaxssxasss"));
-        System.out.println(partition("qwerty"));
+    public void partitionBacktracking () {
+        for (String s : TEST_STRINGS) {
+            System.out.println(partitionBacktracking(s));
+        }
     }
 
-
-
-    public List<List<String>> partition(String s) {
+    public List<List<String>> partitionBacktracking(String s) {
         if (StringUtils.isEmpty(s)) {
             return null;
         }
         List<List<String>> result = new ArrayList<>();
         // 从第一个字符开始遍历, 获得第一个字符就是 subString(0, 1), 所以传入0,1
-        partition(result, new ArrayList<>(), s, 0, 1);
+        partitionBacktracking0(result, new ArrayList<>(), s, 0, 1);
         return result;
     }
-    public void partition(List<List<String>> total, List<String> result, String s, int formerIndex,  int rearIndex) {
-        if (s.length() == rearIndex) {
+    private void partitionBacktracking0(List<List<String>> total, List<String> result, String s, int formerIndex, int rearIndex) {
+        if (s.length() + 1 == rearIndex) {
             List<String> copy = new ArrayList<>();
-            copy.addAll(result);
+            result.forEach(sub -> copy.add(sub));
             total.add(copy);
             return;
         }
-        for (int i = rearIndex; i < s.length(); i++) {
+        for (int i = rearIndex; i < s.length() + 1; i++) {
             String former = s.substring(formerIndex, i);
-            if (isPalindrome(former)) {
+            if (StringUtil.isPalindrome(former)) {
                 result.add(former);
-                partition(total, result, s, rearIndex, i + 1);
-                result.remove(former);
+                partitionBacktracking0(total, result, s, i, i + 1);
+                result.remove(result.size() - 1);
             }
         }
-    }
-
-
-
-    public boolean isPalindrome (String s) {
-        if (StringUtils.isEmpty(s)) {
-            return false;
-        }
-        if (s.length() == 1) {
-            return true;
-        }
-        int i = 0;
-        int j = s.length() - 1;
-        while (i < j) {
-            if (s.charAt(i) != s.charAt(j)) {
-                return false;
-            }
-            i++;
-            j--;
-        }
-        return true;
     }
 }

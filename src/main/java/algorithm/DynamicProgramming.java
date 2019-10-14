@@ -264,6 +264,7 @@ public class DynamicProgramming {
 
     /**
      * 最长子串
+     * 这里应该是只要字符顺序一致即可， 匹配的字符中间可以夹别的字符
      *
      * 字符串s: BDCABA,  字符串t: ABCBDAB
      *
