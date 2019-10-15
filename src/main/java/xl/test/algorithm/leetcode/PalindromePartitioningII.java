@@ -114,5 +114,34 @@ public class PalindromePartitioningII {
         }
     }
 
+    public int minCut2(String s) {
+        if (s == null || s.length() <= 1) {
+            return 0;
+        }
+        int len = s.length();
+        int dp[] = new int[len];
+        // 假设每个字符都要分, 所以一共分 len - 1 次
+        Arrays.fill(dp, len - 1);
+
+        for (int i = 0; i < len; i++) {
+            // 奇数回文串以1个字符为中心
+            int tempLeft = i;
+            int tempRight = i;
+            while (tempLeft >= 0 && tempRight < len && s.charAt(tempLeft) == s.charAt(tempRight)) {
+                dp[tempRight] = Math.min(dp[tempRight], tempLeft == 0 ? 0 : dp[tempLeft - 1] + 1);
+                tempLeft--;
+                tempRight++;
+            }
+            // 偶数回文串以2个字符为中心
+            tempLeft = i;
+            tempRight = i + 1;
+            while (tempLeft >= 0 && tempRight < len && s.charAt(tempLeft) == s.charAt(tempRight)) {
+                dp[tempRight] = Math.min(dp[tempRight], tempLeft == 0 ? 0 : dp[tempLeft - 1] + 1);
+                tempLeft--;
+                tempRight++;
+            }
+        }
+        return dp[len - 1];
+    }
 
 }

@@ -185,6 +185,31 @@ public class FindAllSymmetryString {
         return result;
     }
 
+    /*******************************2019/10/15 实际上, 不需要用dp数组******************************/
+
+
+    private Set<String> allSymmetry(String s) {
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+        Set<String> result = new HashSet<>();
+        int length = s.length();
+        for (int i = 0; i < length; i++) {
+            // 奇数的情况
+            checkAndGetSymmetry(result, s, i, i);
+            // 偶数的情况
+            checkAndGetSymmetry(result, s, i, i + 1);
+        }
+        return result;
+    }
+
+    private void checkAndGetSymmetry(Set<String> result, String s, int i, int j) {
+        int len = s.length();
+        while (i >= 0 && j < len && s.charAt(i) == s.charAt(j)) {
+            result.add(s.substring(i--, ++j));
+        }
+    }
+
     @Test
     public void test () {
         for (String s : TEST_STRINGS) {
@@ -192,7 +217,10 @@ public class FindAllSymmetryString {
             System.out.println(allSymmetryBacktracking(s));
             System.out.print("动态规划 ");
             System.out.println(allSymmetryDynamicProgramming(s));
+            System.out.print("优化算法 ");
+            System.out.println(allSymmetry(s));
             System.out.println();
         }
     }
+
 }
