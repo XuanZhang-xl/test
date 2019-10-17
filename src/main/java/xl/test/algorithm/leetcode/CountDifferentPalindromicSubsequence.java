@@ -59,6 +59,14 @@ public class CountDifferentPalindromicSubsequence {
         }
     }
 
+    /**
+     * 这里的状态转移公式不再是一个单一的等式
+     * ...太复杂,,不知怎么总结
+     *
+     *
+     * @param s
+     * @return
+     */
     public int countPalindromicSubsequences(String s) {
         int strSize = s.length(), M = 1000000000 + 7;
         //dp[i][j]表示的S[i, j]这段字符串中不同的回文子序列个数
