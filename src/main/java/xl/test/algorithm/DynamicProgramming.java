@@ -1,6 +1,7 @@
 package xl.test.algorithm;
 
 import org.junit.Test;
+import xl.test.algorithm.leetcode.utils.StringUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -284,25 +285,12 @@ public class DynamicProgramming {
      * 因此, 现在只需要找：LCS(Xn-1, Ym-1)就好, LCS(X,Y)=LCS(Xn-1, Ym-1)+1, 
      * 如果xn != ym, 这下要麻烦一点, 因为它产生了两个子问题：LCS(Xn-1, Ym) 和 LCS(Xn, Ym-1)。
      *
-     * TODO: 怎么找出 BCBA 和 BCAB 这两个最长子串
      */
     @Test
     public void LongestSubString(){
         String s = "BDCABA";
         String t = "ABCBDAB";
-
-        int[][] dp = new int[t.length() + 1][s.length() + 1];
-
-        for (int j = 1; j < s.length() + 1; j++) {
-            for (int i = 1; i < t.length() + 1; i++) {
-                if (s.charAt(j - 1) == t.charAt(i - 1)) {
-                    dp[i][j] = dp[i - 1][j - 1] + 1;
-                } else {
-                    dp[i][j] = Math.max(dp[i][j - 1], dp[i - 1][j]);
-                }
-            }
-        }
-        System.out.println(dp[t.length()][s.length()]);
+        System.out.println(StringUtil.longestSubString(s, t));
     }
 
 }

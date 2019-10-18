@@ -11,6 +11,7 @@ public class TreeNode {
 
     private String data;
 
+    private int val;
 
     public TreeNode getLeft() {
         return left;
@@ -34,5 +35,24 @@ public class TreeNode {
 
     public void setData(String data) {
         this.data = data;
+    }
+
+    public int getVal() {
+        return val;
+    }
+
+    public void setVal(int val) {
+        this.val = val;
+    }
+
+    public TreeNode(String data) {
+        this.data = data;
+    }
+
+    public TreeNode(int val) {
+        this.val = val;
+    }
+
+    public TreeNode() {
     }
 }

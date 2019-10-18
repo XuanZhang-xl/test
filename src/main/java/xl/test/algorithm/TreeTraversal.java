@@ -1,6 +1,7 @@
 package xl.test.algorithm;
 
 import org.junit.Test;
+import xl.test.algorithm.leetcode.utils.TreeNodeUtil;
 
 /**
  * 树的左中右序遍历
@@ -18,7 +19,7 @@ public class TreeTraversal {
      */
     @Test
     public void frontBinaryTreeTraversal () {
-        TreeNode root = BuildTree.getTree(10);
+        TreeNode root = TreeNodeUtil.buildTree(10);
         frontTraversal(root);
     }
 
@@ -38,7 +39,7 @@ public class TreeTraversal {
      */
     @Test
     public void middleBinaryTreeTraversal () {
-        TreeNode root = BuildTree.getTree(10);
+        TreeNode root = TreeNodeUtil.buildTree(10);
         middleTraversal(root);
     }
 
@@ -59,7 +60,7 @@ public class TreeTraversal {
      */
     @Test
     public void rightBinaryTreeTraversal () {
-        TreeNode root = BuildTree.getTree(10);
+        TreeNode root = TreeNodeUtil.buildTree(10);
         rightTraversal(root);
     }
 

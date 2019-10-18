@@ -65,4 +65,23 @@ public class IsPalindromeIII {
         return true;
     }
 
+    /**
+     * 思路2: 求s和反转s的最长公共子序列即可
+     */
+    @Test
+    public void isPalindrome2 () {
+        int k = 4;
+        for (String s : TEST_STRINGS) {
+            System.out.println(isPalindrome2(s, k));
+        }
+    }
+
+    private boolean isPalindrome2(String s, int k) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = s.length() - 1; i >= 0 ; i--) {
+            sb.append(s.charAt(i));
+        }
+        return s.length() <= k + StringUtil.longestSubString(s, sb.toString());
+    }
+
 }
