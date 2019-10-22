@@ -6,23 +6,32 @@ package xl.test.algorithm.leetcode.str;
 public class TrieNode {
 
     // R links to node children
-    private TrieNode[] links;
+    private TrieNode[] links = null;
 
-    private final int R = 26;
+    private boolean isEnd = false;
 
-    private boolean isEnd;
+    private int size = 0;
 
-    // number of children non null links
-    private int size;
     public void put(char ch, TrieNode node) {
-        links[ch -'a'] = node;
-        size++;
+        if (links[ch -'a'] == null) {
+            links[ch -'a'] = node;
+            size++;
+        }
     }
 
-    public int getLinks() {
-        return size;
+    public TrieNode getChild(char c) {
+        return links[c - 'a'];
     }
-    //assume methods containsKey, isEnd, get, put are implemented as it is described
-    //in  https://leetcode.com/articles/implement-trie-prefix-tree/)
 
+    public void setEnd(boolean end) {
+        isEnd = end;
+    }
+
+    public boolean isEnd() {
+        return isEnd;
+    }
+
+    public TrieNode() {
+        links = new TrieNode[26];
+    }
 }
