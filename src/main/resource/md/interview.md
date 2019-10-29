@@ -31,11 +31,7 @@
         - 快速排序
     
 2. mysql
-    - ACID
-        - 原子性（Atomicity）: 整个事务中的所有操作，要么全部完成，要么全部不完成
-        - 一致性（Consistency）: 数据库可以按照预想的方式走下去
-        - 隔离性（Isolation）: 事务与事务之间互不影响
-        - 持久性（Durability）: 事务完成以后, 数据被永久存储
+    - 概念请看[ddia.md](ddia.md)
     - sql优化
         ```
         1. 应尽量避免在 where 子句中使用!=或<>操作符，否则将引擎放弃使用索引而进行全表扫描。
@@ -46,27 +42,6 @@
         6. 隐式转换导致索引失效
         
         ```
-    - 隔离级别
-        - 无隔离级别: 脏写:一个事务覆盖了另一个事务未提交的数据
-        - 读未提交(read uncommitted): 脏读:可以读取其他事务未提交的脏数据。
-        - 读已提交(read committed): 不可重复读: 事务 A 多次读取同一数据，事务 B 在事务A多次读取的过程中，对数据作了更新并提交，导致事务A多次读取同一数据时，结果 不一致。
-        - 可重复读(repeatable read): 幻读: 可以读取到别的事务新插入/修改的数据, mysql使用 MVCC：多版本并发控制 后, 已经不会出现幻读了
-        ```
-        MVCC实现:
-        每个数据记录携带两个额外的数据created_by_txn_id和deleted_by_txn_id。
-        当一个数据被insert时，created_by_txn_id记录下插入该数据的事务ID，deleted_by_txn_id留空。
-        当一个数据被delete时，该数据的deleted_by_txn_id记录执行该删除的事务ID。
-        当一个数据被update时，原有数据的deleted_by_txn_id记录执行该更新的事务ID，并且新增一条新的数据记录，其created_by_txn_id记录下更新该数据的事务ID
-        在另一个事务进行读取时，由隔离级别来控制到底取哪个版本。同时，在读取过程中，完全不加锁（除非用SELECT … FOR UPDATE强行加锁）
-        
-        有了MVCC，Read Committed和Repeatable Read就的实现就很直观了：
-        对于Read Committed，每次读取时，总是取最新的，被提交的那个版本的数据记录。
-        对于Repeatable Read，每次读取时，总是取created_by_txn_id小于等于当前事务ID的那些数据记录。在这个范围内，如果某一数据多个版本都存在，则取最新的。
-
-        作者：大宽宽
-        链接：https://www.jianshu.com/p/cb97f76a92fd
-        ```
-        - 串行(serializable)
     - 主索引, 唯一索引, 倒排索引, 索引在内存? 索引失效?
         - 主索引: innodb唯一的聚簇索引
     - 延迟关联
@@ -91,7 +66,8 @@
         官方教程:  https://dev.mysql.com/doc/refman/8.0/en/linux-installation-yum-repo.html#yum-repo-installing-mysql
         但是安装完后需要执行  mysqld --initialize   否则找不到初始密码
         ```
-
+    - 常用参数设置
+        - show variables 查看当前设置
 
 3. AQS, 并发框架, 线程池
     - volatile 实现原理
