@@ -18,6 +18,12 @@ public class TreeNodeUtil {
      * @return
      */
     public static TreeNode buildTree(Integer[] data) {
+        if (data == null) {
+            return null;
+        }
+        if (data.length == 0) {
+            return new TreeNode();
+        }
         TreeNode root = new TreeNode(data[0]);
         int length = data.length;
         TreeNode[] nodes = new TreeNode[length];
@@ -52,6 +58,9 @@ public class TreeNodeUtil {
      * @return
      */
     public static TreeNode buildTree(int[] data) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
         TreeNode root = new TreeNode(data[0]);
         int length = data.length;
         TreeNode[] nodes = new TreeNode[length];
@@ -74,11 +83,14 @@ public class TreeNodeUtil {
     }
 
     /**
-     * 获得一个tree的根节点
+     * 获得一个顺序 tree的根节点
      * @param num
      * @return
      */
     public static TreeNode buildTree(Integer num) {
+        if (num < 0) {
+            throw new RuntimeException("传入的数字不可小于0!");
+        }
         // 创建根节点
         TreeNode root = new TreeNode();
         root.setData("0");
