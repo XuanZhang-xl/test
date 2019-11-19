@@ -1,6 +1,7 @@
-package xl.test.algorithm.leetcode;
+package xl.test.algorithm.unionfind;
 
 import org.junit.Test;
+import xl.test.algorithm.leetcode.utils.UnionFindSetUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +66,7 @@ public class EquationsPossible {
 
     @Test
     public void equationsPossible() {
-        initArray(26);
+        UnionFindSetUtil.initArray(26);
         String[] equations = new String[]{"c==c","b==d","x!=z"};
         System.out.println(equationsPossible(equations));
     }
@@ -79,7 +80,7 @@ public class EquationsPossible {
             int begin = fromCharToInt(equation.charAt(0));
             int end = fromCharToInt(equation.charAt(equation.length() - 1));
             if (equation.substring(1, equation.length() - 1).equals("==")) {
-                initRelation(begin, end);
+                UnionFindSetUtil.initRelation(begin, end);
             } else {
                 unequals.add(equation);
             }
@@ -89,8 +90,8 @@ public class EquationsPossible {
             for (String unequal : unequals) {
                 int begin = fromCharToInt(unequal.charAt(0));
                 int end = fromCharToInt(unequal.charAt(unequal.length() - 1));
-                int rootI = findRoot(begin);
-                int rootJ = findRoot(end);
+                int rootI = UnionFindSetUtil.findRoot(begin);
+                int rootJ = UnionFindSetUtil.findRoot(end);
                 if (rootI == rootJ && rootI != -1) {
                     return false;
                 }
@@ -99,46 +100,8 @@ public class EquationsPossible {
         return true;
     }
 
-    private void initRelation(int i, int j) {
-        int rootI = findRoot(i);
-        int rootJ = findRoot(j);
-        if (rootI != rootJ) {
-            if (heights[rootI] == heights[rootJ]) {
-                element[rootI] = rootJ;
-                heights[rootJ]++;
-            } else if (heights[rootI] > heights[rootJ]) {
-                element[rootJ] = rootI;
-            } else {
-                element[rootI] = rootJ;
-            }
-        }
-    }
-
-    private int findRoot(int x) {
-        while (element[x] != -1) {
-            x = element[x];
-        }
-        return x;
-    }
-
     private int fromCharToInt(char ch) {
         return ch - 97;
-    }
-
-
-    private void initArray (int size) {
-        if (element == null) {
-            element = new int[size];
-            for (int i = 0; i < size; i++) {
-                element[i] = -1;
-            }
-        }
-        if (heights == null) {
-            heights = new int[size];
-            for (int i = 0; i < size; i++) {
-                heights[i] = 1;
-            }
-        }
     }
 
     public static void main(String[] args){
