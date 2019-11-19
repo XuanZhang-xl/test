@@ -1,7 +1,6 @@
 package xl.test.algorithm.unionfind;
 
 import org.junit.Test;
-import xl.test.algorithm.leetcode.utils.UnionFindSetUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,13 +59,11 @@ import java.util.List;
  */
 public class EquationsPossible {
 
-    private int[] element = null;
-
-    private int[] heights = null;
+    UnionFindSet unionFindSet = new UnionFindSet();
 
     @Test
     public void equationsPossible() {
-        UnionFindSetUtil.initArray(26);
+        unionFindSet = new UnionFindSet(26);
         String[] equations = new String[]{"c==c","b==d","x!=z"};
         System.out.println(equationsPossible(equations));
     }
@@ -80,7 +77,7 @@ public class EquationsPossible {
             int begin = fromCharToInt(equation.charAt(0));
             int end = fromCharToInt(equation.charAt(equation.length() - 1));
             if (equation.substring(1, equation.length() - 1).equals("==")) {
-                UnionFindSetUtil.initRelation(begin, end);
+                unionFindSet.initRelation(begin, end);
             } else {
                 unequals.add(equation);
             }
@@ -90,8 +87,8 @@ public class EquationsPossible {
             for (String unequal : unequals) {
                 int begin = fromCharToInt(unequal.charAt(0));
                 int end = fromCharToInt(unequal.charAt(unequal.length() - 1));
-                int rootI = UnionFindSetUtil.findRoot(begin);
-                int rootJ = UnionFindSetUtil.findRoot(end);
+                int rootI = unionFindSet.findRoot(begin);
+                int rootJ = unionFindSet.findRoot(end);
                 if (rootI == rootJ && rootI != -1) {
                     return false;
                 }

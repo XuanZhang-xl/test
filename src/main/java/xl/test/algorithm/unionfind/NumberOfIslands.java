@@ -1,7 +1,6 @@
 package xl.test.algorithm.unionfind;
 
 import org.junit.Test;
-import xl.test.algorithm.leetcode.utils.UnionFindSetUtil;
 
 /**
  * 给定一个由 '1'（陆地）和 '0'（水）组成的的二维网格，计算岛屿的数量。一个岛被水包围，并且它是通过水平方向或垂直方向上相邻的陆地连接而成的。你可以假设网格的四个边均被水包围。
@@ -50,11 +49,11 @@ public class NumberOfIslands {
         char[] four = new char[]{'1','1','1','1','0'};
         char[] five = new char[]{'1','1','0','1','0'};
         char[] six = new char[]{'0','0','0','0','0'};
-        //char[][] grid1 = new char[][]{four, five, one, six};
-        //char[][] grid2 = new char[][]{one, one, two, three};
+        char[][] grid1 = new char[][]{four, five, one, six};
+        char[][] grid2 = new char[][]{one, one, two, three};
 
-        //System.out.println(numIslands(grid1));
-        //System.out.println(numIslands(grid2));
+        System.out.println(numIslands(grid1));
+        System.out.println(numIslands(grid2));
 
         char[] a = new char[]{'1','1','1','1','1','1'};
         char[] b = new char[]{'1','0','0','0','0','1'};
@@ -64,14 +63,19 @@ public class NumberOfIslands {
 
     }
 
-
+    /**
+     * 时间复杂度: O(NM)
+     * 空间复杂度: O(NM)
+     * @param grid
+     * @return
+     */
     public int numIslands(char[][] grid) {
         if (grid == null || grid.length == 0 || grid[0] == null || grid[0].length == 0) {
             return 0;
         }
         int row = grid.length;
         int length = grid[0].length;
-        UnionFindSetUtil.initArray(row * length);
+        UnionFindSet unionFindSet = new UnionFindSet(row * length);
 
         int rootsSize = 0;
 
@@ -81,14 +85,14 @@ public class NumberOfIslands {
                 if (chars[j] == '1') {
                     // 检查右边是否为1, 如果为1, 建立关系
                     // 从左往右走的, 所以只要看右边的是否有关系即可, 不用回头看左边的了
-                    if (j + 1 < chars.length - 1 && chars[j + 1] == '1') {
-                        UnionFindSetUtil.initRelation(i * length + (j + 1), i * length + (j + 2));
+                    if (j + 1 < chars.length && chars[j + 1] == '1') {
+                        unionFindSet.initRelation(i * length + j, i * length + j + 1);
                         continue;
                     }
                     // 检查下边是否为1, 如果为1, 建立关系
                     // 从上往下走的, 所以只要看下面的是否有关系即可, 不用回头看上边的了
-                    if (i + 1 < grid.length - 1 && grid[i + 1][j] == '1') {
-                        UnionFindSetUtil.initRelation(i * length + (j + 1), (i + 1) * length + (j + 1));
+                    if (i + 1 < grid.length && grid[i + 1][j] == '1') {
+                        unionFindSet.initRelation(i * length + j, (i + 1) * length + j);
                         continue;
                     }
 
@@ -105,7 +109,7 @@ public class NumberOfIslands {
                 }
             }
         }
-        return rootsSize + UnionFindSetUtil.listRoots().size();
+        return rootsSize + unionFindSet.listRoots().size();
     }
 
 }
