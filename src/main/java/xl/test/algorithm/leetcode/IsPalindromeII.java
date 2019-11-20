@@ -1,11 +1,7 @@
 package xl.test.algorithm.leetcode;
 
 import org.junit.Test;
-import xl.test.algorithm.leetcode.utils.StringUtil;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
+import xl.test.algorithm.utils.StringUtil;
 
 /**
  * 给定一个非空字符串 s，最多删除一个字符。判断是否能成为回文字符串。

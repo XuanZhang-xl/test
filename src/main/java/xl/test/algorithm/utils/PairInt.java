@@ -1,4 +1,4 @@
-package xl.test.algorithm.leetcode.utils;
+package xl.test.algorithm.utils;
 
 /**
  * 一对整数

@@ -3,7 +3,7 @@ package xl.test.algorithm.graph;
 import org.apache.commons.math3.util.Pair;
 import org.junit.Test;
 import xl.test.algorithm.TreeNode;
-import xl.test.algorithm.leetcode.utils.TreeNodeUtil;
+import xl.test.algorithm.utils.TreeNodeUtil;
 
 import java.util.LinkedList;
 import java.util.Queue;

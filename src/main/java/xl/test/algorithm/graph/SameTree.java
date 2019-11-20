@@ -2,7 +2,7 @@ package xl.test.algorithm.graph;
 
 import org.junit.Test;
 import xl.test.algorithm.TreeNode;
-import xl.test.algorithm.leetcode.utils.TreeNodeUtil;
+import xl.test.algorithm.utils.TreeNodeUtil;
 
 /**
  * 相同的树

@@ -3,7 +3,7 @@ package xl.test.algorithm.leetcode;
 import org.junit.Before;
 import org.junit.Test;
 import xl.test.algorithm.TreeNode;
-import xl.test.algorithm.leetcode.utils.TreeNodeUtil;
+import xl.test.algorithm.utils.TreeNodeUtil;
 
 import java.util.ArrayList;
 import java.util.List;

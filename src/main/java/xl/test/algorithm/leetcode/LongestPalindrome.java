@@ -1,7 +1,7 @@
 package xl.test.algorithm.leetcode;
 
 import org.junit.Test;
-import xl.test.algorithm.leetcode.utils.PairInt;
+import xl.test.algorithm.utils.PairInt;
 
 /**
  *

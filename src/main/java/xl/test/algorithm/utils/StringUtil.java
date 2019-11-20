@@ -1,4 +1,4 @@
-package xl.test.algorithm.leetcode.utils;
+package xl.test.algorithm.utils;
 
 import org.springframework.util.StringUtils;
 

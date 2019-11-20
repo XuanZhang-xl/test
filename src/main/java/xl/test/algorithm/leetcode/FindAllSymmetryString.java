@@ -1,6 +1,6 @@
 package xl.test.algorithm.leetcode;
 
-import xl.test.algorithm.leetcode.utils.StringUtil;
+import xl.test.algorithm.utils.StringUtil;
 import org.junit.Test;
 import org.springframework.util.StringUtils;
 

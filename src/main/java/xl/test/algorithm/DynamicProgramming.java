@@ -1,7 +1,7 @@
 package xl.test.algorithm;
 
 import org.junit.Test;
-import xl.test.algorithm.leetcode.utils.StringUtil;
+import xl.test.algorithm.utils.StringUtil;
 
 import java.util.HashMap;
 import java.util.Map;

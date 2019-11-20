@@ -1,7 +1,7 @@
 package xl.test.algorithm;
 
 import org.junit.Test;
-import xl.test.algorithm.leetcode.utils.TreeNodeUtil;
+import xl.test.algorithm.utils.TreeNodeUtil;
 
 /**
  * 树的左中右序遍历

@@ -1,6 +1,7 @@
 package xl.test.algorithm.unionfind;
 
 import org.junit.Test;
+import xl.test.algorithm.utils.GetData;
 
 /**
  * 给定一个由 '1'（陆地）和 '0'（水）组成的的二维网格，计算岛屿的数量。一个岛被水包围，并且它是通过水平方向或垂直方向上相邻的陆地连接而成的。你可以假设网格的四个边均被水包围。
@@ -43,24 +44,14 @@ public class NumberOfIslands {
 
     @Test
     public void numIslands() {
-        char[] one = new char[]{'1','1','0','0','0'};
-        char[] two = new char[]{'0','0','1','0','0'};
-        char[] three = new char[]{'0','0','0','1','1'};
-        char[] four = new char[]{'1','1','1','1','0'};
-        char[] five = new char[]{'1','1','0','1','0'};
-        char[] six = new char[]{'0','0','0','0','0'};
-        char[][] grid1 = new char[][]{four, five, one, six};
-        char[][] grid2 = new char[][]{one, one, two, three};
+        System.out.println(numIslands(GetData.getCharArraySample1()));
+        System.out.println(numIslands(GetData.getCharArraySample2()));
+        System.out.println(numIslands(GetData.getCharArraySample3()));
 
-        System.out.println(numIslands(grid1));
-        System.out.println(numIslands(grid2));
-
-        char[] a = new char[]{'1','1','1','1','1','1'};
-        char[] b = new char[]{'1','0','0','0','0','1'};
-        char[] c = new char[]{'1','0','1','1','0','1'};
-        char[][] grid3 = new char[][]{a, b, c, b, a};
-        System.out.println(numIslands(grid3));
-
+        System.out.println(numIslands(GetData.getRandomZeroOneCharArray(10, 10)));
+        System.out.println(numIslands(GetData.getRandomZeroOneCharArray(100, 100)));
+        System.out.println(numIslands(GetData.getRandomZeroOneCharArray(1000, 1000)));
+        System.out.println(numIslands(GetData.getRandomZeroOneCharArray(10000, 10000)));
     }
 
     /**
@@ -83,16 +74,20 @@ public class NumberOfIslands {
             char[] chars = grid[i];
             for (int j = 0; j < chars.length; j++) {
                 if (chars[j] == '1') {
+                    boolean checked = false;
                     // 检查右边是否为1, 如果为1, 建立关系
                     // 从左往右走的, 所以只要看右边的是否有关系即可, 不用回头看左边的了
                     if (j + 1 < chars.length && chars[j + 1] == '1') {
                         unionFindSet.initRelation(i * length + j, i * length + j + 1);
-                        continue;
+                        checked = true;
                     }
                     // 检查下边是否为1, 如果为1, 建立关系
                     // 从上往下走的, 所以只要看下面的是否有关系即可, 不用回头看上边的了
                     if (i + 1 < grid.length && grid[i + 1][j] == '1') {
                         unionFindSet.initRelation(i * length + j, (i + 1) * length + j);
+                        checked = true;
+                    }
+                    if (checked) {
                         continue;
                     }
 
