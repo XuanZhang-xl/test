@@ -5,13 +5,14 @@ package xl.test.algorithm;
  */
 public class TreeNode {
 
-    private TreeNode left;
+    // 和leetcode统一, 可以直接拿到至
+    public TreeNode left;
 
-    private TreeNode right;
+    public TreeNode right;
 
-    private String data;
+    public String data;
 
-    private int val;
+    public int val;
 
     public TreeNode getLeft() {
         return left;
