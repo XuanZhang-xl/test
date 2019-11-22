@@ -56,10 +56,30 @@ public class DiameterOfBinaryTree {
         if (root == null) {
             return 0;
         }
+        return Math.max(diameterOfBinaryTreeRecursion(root.left), diameterOfBinaryTreeRecursion(root.right)) + 1;
+    }
 
-        int left = diameterOfBinaryTreeRecursion(root.left) + 1;
-        int right = diameterOfBinaryTreeRecursion(root.right) + 1;
+    /**
+     * 官方答案
+     * 怎么能写这么简洁
+     */
+    @Test
+    public void diameterOfBinaryTree2() {
+        TreeNode treeNode = TreeNodeUtil.buildTree(new int[]{1, 2, 3, 4, 5});
+        System.out.println(diameterOfBinaryTree2(treeNode));
+    }
 
-        return Math.max(left, right);
+    int ans;
+    public int diameterOfBinaryTree2(TreeNode root) {
+        ans = 1;
+        depth(root);
+        return ans - 1;
+    }
+    public int depth(TreeNode node) {
+        if (node == null) return 0;
+        int L = depth(node.left);
+        int R = depth(node.right);
+        ans = Math.max(ans, L+R+1);
+        return Math.max(L, R) + 1;
     }
 }
