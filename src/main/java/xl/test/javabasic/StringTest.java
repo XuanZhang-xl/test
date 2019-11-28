@@ -1,5 +1,8 @@
 package xl.test.javabasic;
 
+import com.alibaba.fastjson.JSONObject;
+import org.junit.Test;
+
 /**
  * 为什么 String 类被 final 修饰
  *
@@ -42,5 +45,11 @@ public class StringTest {
         String d = new String("abc").intern();
         System.out.println(c == d);  // true
         System.out.println(c.equals(d)); // True
+    }
+
+    @Test
+    public void split() {
+        System.out.println(JSONObject.toJSONString("1,2,3".split(",")));
+        System.out.println(JSONObject.toJSONString("1".split(",")));
     }
 }

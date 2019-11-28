@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * created by XUAN on 2018/12/5
@@ -41,6 +42,17 @@ public class ArrayListTest {
 
         String[] strings = stringList.toArray(new String[stringList.size()]);
         System.out.println(JSONObject.toJSONString(strings));
+
+        List<String> packList = new ArrayList<>();
+        packList.add("1");
+        packList.add("2");
+        packList.add("4");
+        packList.add("");
+        packList.add("6");
+        packList.add(null);
+        packList.add("6");
+        String collect = packList.stream().collect(Collectors.joining(","));
+        System.out.println(collect);
 
 
     }
