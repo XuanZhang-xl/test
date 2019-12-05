@@ -155,7 +155,7 @@ public class NetworkLatency {
             }
             graphLines.add(new GraphLine(time[0], time[1], time[2]));
         }
-        // 已遍历的节点
+        // 存储已找到K到达该点最短路径
         Map<Integer, Integer> checked = new HashMap();
         while (!heap.isEmplty()) {
             // 获得当前最小值
