@@ -3,6 +3,9 @@ package xl.test.algorithm;
 import org.junit.Test;
 import xl.test.algorithm.utils.TreeNodeUtil;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 树的左中右序遍历
  *
@@ -72,5 +75,20 @@ public class TreeTraversal {
             rightTraversal(node.getRight());
         }
         System.out.println(node.getData());
+    }
+
+    /**
+     * 中序遍历, 如果是null的话会把null打印出来,
+     *
+     * 叶子节点的null不会打印,
+     */
+    @Test
+    public void frontBinaryTreeTraversalWithNull () {
+        TreeNode one = new TreeNode(1);
+        TreeNode two = new TreeNode(2);
+        TreeNode three = new TreeNode(3);
+        three.left = one;
+        one.right = two;
+        System.out.println(TreeNodeUtil.getIntArray(three));
     }
 }

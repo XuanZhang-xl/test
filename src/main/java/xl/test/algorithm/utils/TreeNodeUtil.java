@@ -113,4 +113,63 @@ public class TreeNodeUtil {
         return root;
     }
 
+    public static List<Integer> getIntArray(TreeNode treeNode) {
+        List<Integer> intArray = new ArrayList<>();
+        intArray.add(treeNode.val);
+        getIntArray(intArray, treeNode);
+        return intArray;
+    }
+
+    private static void getIntArray(List<Integer> intArray, TreeNode treeNode) {
+        if (treeNode.left != null || treeNode.right != null) {
+            if (treeNode.left != null) {
+                intArray.add(treeNode.left.val);
+            }
+            if (treeNode.left == null) {
+                intArray.add(null);
+            }
+            if (treeNode.right != null) {
+                intArray.add(treeNode.right.val);
+            }
+            if (treeNode.right == null) {
+                intArray.add(null);
+            }
+        }
+        if (treeNode.left != null) {
+            getIntArray(intArray, treeNode.left);
+        }
+        if (treeNode.right != null) {
+            getIntArray(intArray, treeNode.right);
+        }
+    }
+    public static List<String> getStringArray(TreeNode treeNode) {
+        List<String> intArray = new ArrayList<>();
+        intArray.add(treeNode.data);
+        getStringArray(intArray, treeNode);
+        return intArray;
+    }
+
+    private static void getStringArray(List<String> intArray, TreeNode treeNode) {
+        if (treeNode.left != null || treeNode.right != null) {
+            if (treeNode.left != null) {
+                intArray.add(treeNode.left.data);
+            }
+            if (treeNode.left == null) {
+                intArray.add(null);
+            }
+            if (treeNode.right != null) {
+                intArray.add(treeNode.right.data);
+            }
+            if (treeNode.right == null) {
+                intArray.add(null);
+            }
+        }
+        if (treeNode.left != null) {
+            getStringArray(intArray, treeNode.left);
+        }
+        if (treeNode.right != null) {
+            getStringArray(intArray, treeNode.right);
+        }
+    }
+
 }
