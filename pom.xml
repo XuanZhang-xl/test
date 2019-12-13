@@ -7,6 +7,7 @@
     <groupId>xl</groupId>
     <artifactId>test</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <properties>
         <java.version>1.8</java.version>
@@ -168,6 +169,24 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.9.9.3</version>
         </dependency>
+
+        <!--spring-jdbc 用法研究-->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>5.2.2.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.47</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.4.6</version>
+        </dependency>
+
     </dependencies>
 
     <build>
