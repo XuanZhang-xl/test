@@ -1,4 +1,4 @@
-package xl.test.javabasic.orm.jdbc;
+package xl.test.javabasic.orm;
 
 import xl.test.javabasic.orm.User;
 
