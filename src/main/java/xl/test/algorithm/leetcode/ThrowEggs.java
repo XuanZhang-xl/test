@@ -96,7 +96,7 @@ public class ThrowEggs {
                             // 在第i层扔下时, 有两种可能, 碎了, 没碎
                             // 第i层没碎, 则鸡蛋仍有k个, 剩余需要测试的楼层有n-i层
                             throwEggsRecursion(k, n - i),
-                            // 第i层碎了, 则鸡蛋仍有k个, 剩余需要测试的楼层有i-1层
+                            // 第i层碎了, 则鸡蛋有k-1个, 剩余需要测试的楼层有i-1层
                             throwEggsRecursion(k - 1, i - 1)
                     ) + 1 // 扔鸡蛋次数+1
             );
