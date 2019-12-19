@@ -2,6 +2,7 @@ package xl.test.javabasic.orm.jdbc;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import xl.test.javabasic.orm.User;
+import xl.test.javabasic.orm.UserService;
 
 import javax.sql.DataSource;
 import java.sql.Types;

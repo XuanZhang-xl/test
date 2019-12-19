@@ -2,8 +2,6 @@ package xl.test.javabasic.orm.mybatis;
 
 import com.alibaba.fastjson.JSON;
 import org.apache.ibatis.builder.xml.XMLMapperBuilder;
-import org.apache.ibatis.executor.ErrorContext;
-import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ExecutorType;
@@ -17,10 +15,10 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import xl.test.javabasic.orm.DataSourceGetter;
+import xl.test.javabasic.orm.MapperLocation;
 import xl.test.javabasic.orm.User;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 /**

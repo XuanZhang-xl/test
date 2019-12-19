@@ -1,4 +1,4 @@
-package xl.test.javabasic.orm.mybatis;
+package xl.test.javabasic.orm;
 
 /**
  * created by XUAN on 2019/12/13
