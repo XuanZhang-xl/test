@@ -67,7 +67,21 @@ ApplicationContext创建
 
 ## BeanFactoryPostProcessor扩展点
 
+主要用于bean的加载
+
+- `MapperScannerConfigurer` 扫描mybatis的mapper.java 加载进入ApplicationContext
+- `ConfigurationClassPostProcessor` 解析 `@PropertySources` `@ComponentScans` `@ComponentScan` `@ImportResource` 加载bean或配置文件的注解
+    - `ClassPathScanningCandidateComponentProvider#findCandidateComponents`最后在此方法中扫描/获得`BeanDefinition`, 在`isCandidateComponent(metadataReader)`根据`excludeFilters`, `includeFilters`筛选, `ClassPathScanningCandidateComponentProvider`在初始化的时候会在`includeFilters`中添加`@Component`筛选器
+    
+    
+    
+
+
 ## doGetBean
+
+每次bean实例化完成后, 都会调用 `AbstractBeanFactory#getObjectForBeanInstance` 判断得到的bean是不是`FactoryBean`, 如果不是则返回原bean, 如果是则返回`FactoryBean#getBean`的返回值
+- MapperFactoryBean 返回mapper的代理类
+
 
 ## Aop切入点
 

@@ -14,10 +14,11 @@ import org.junit.Test;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
-import xl.test.javabasic.orm.DataSourceGetter;
+import xl.test.javabasic.orm.OrmPropertyGetter;
 import xl.test.javabasic.orm.MapperLocation;
 import xl.test.javabasic.orm.User;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.util.List;
 
@@ -27,36 +28,10 @@ import java.util.List;
 public class MybatisUsingCodeTest {
 
     public static void main(String[] args) throws ClassNotFoundException, IOException {
-        // 相当于mybatis-config.xml
-        Configuration configuration = new Configuration();
-        configuration.setCacheEnabled(false);
-        configuration.setUseGeneratedKeys(true);
-        configuration.setDefaultExecutorType(ExecutorType.REUSE);
-        //设置别名
-        TypeAliasRegistry typeAliasRegistry = configuration.getTypeAliasRegistry();
-        typeAliasRegistry.registerAlias("user", User.class);
 
-        // 设置环境, 数据源, 事务管理器
-        Environment environment = new Environment("dev", new JdbcTransactionFactory(), DataSourceGetter.getDataSource());
-        configuration.setEnvironment(environment);
-
-        // 加载xml, spring提供的加载器可以一次性加载所有xml, 并且语法有所改变, 需要加classoath*:
-        ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        String resourceString = MapperLocation.SPRING_MYBATIS;
-        Resource[] resources = resolver.getResources(resourceString);
-        for (Resource resource : resources) {
-            new XMLMapperBuilder(resource.getInputStream(), configuration, resourceString, configuration.getSqlFragments()).parse();
-        }
-
-
-        // 这是从XMLConfigBuilder.mapperElement()复制下来的代码, Resources.getResourceAsStream(resource)  这句话还不能加载出xml来
-        // 因为mybatis本身不支持*.xml写这样的写法,,, 需要多个xml, 就只有配多个<mapper>标签, 这里手写加载代码的话就要一个一个mapper加载
-        //ErrorContext.instance().resource(resource);
-        //InputStream inputStream = Resources.getResourceAsStream(resource);
-        //XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
-        //mapperParser.parse();
-
-        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
+        DataSource dataSource = OrmPropertyGetter.getDataSource();
+        Configuration configuration = OrmPropertyGetter.getConfiguration(dataSource);
+        SqlSessionFactory sqlSessionFactory = OrmPropertyGetter.getSqlSessionFactory(configuration);
 
         SqlSession sqlSession = sqlSessionFactory.openSession();
         UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
