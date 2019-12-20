@@ -35,6 +35,7 @@ public class MybatisUsingSpringBootTest {
         UserService userService = (UserService) applicationContext.getBean("userServiceImpl");
         List<User> users = userService.listUser();
         System.out.println(JSON.toJSONString(users));
+        applicationContext.close();
     }
 
 
