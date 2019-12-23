@@ -70,8 +70,10 @@ ApplicationContext创建
 主要用于bean的加载
 
 - `MapperScannerConfigurer` 扫描mybatis的mapper.java 加载进入ApplicationContext
-- `ConfigurationClassPostProcessor` 解析 `@PropertySources` `@ComponentScans` `@ComponentScan` `@ImportResource` 加载bean或配置文件的注解
     - `ClassPathScanningCandidateComponentProvider#findCandidateComponents`最后在此方法中扫描/获得`BeanDefinition`, 在`isCandidateComponent(metadataReader)`根据`excludeFilters`, `includeFilters`筛选, `ClassPathScanningCandidateComponentProvider`在初始化的时候会在`includeFilters`中添加`@Component`筛选器
+- `ConfigurationClassPostProcessor` 扫描到所有@Configuration的BeanDefinition, 并解析这些@Configuration 加载bean
+    - 加载到@Configuration后, 最终会调用 `ConfigurationClassParser#doProcessConfigurationClass`解析 `@PropertySources` `@ComponentScans` `@ComponentScan` `@ImportResource` `@Import` `@Component` 加载bean或配置文件的注解
+    - `ConfigurationClassParser#doProcessConfigurationClass` 也会解析`ImportSelector`和`ImportBeanDefinitionRegistrar` 获得`ConfigurationClass`, 最终在`ConfigurationClassPostProcessor#processConfigBeanDefinitions`中将这些Configuration实例化并注册
     
     
     
