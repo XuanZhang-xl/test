@@ -75,7 +75,22 @@ ApplicationContext创建
     - 加载到@Configuration后, 最终会调用 `ConfigurationClassParser#doProcessConfigurationClass`解析 `@PropertySources` `@ComponentScans` `@ComponentScan` `@ImportResource` `@Import` `@Component` 加载bean或配置文件的注解
     - `ConfigurationClassParser#doProcessConfigurationClass` 也会解析`ImportSelector`和`ImportBeanDefinitionRegistrar` 获得`ConfigurationClass`, 最终在`ConfigurationClassPostProcessor#processConfigBeanDefinitions`中将这些Configuration实例化并注册
     
-    
+### 条件装配: @Conditional
+
+@Conditional 扩展出了很多注解, 比如
+- @Profile
+- @ConditionalOnXxxx
+
+其中 `@Conditional`与`@Profile`在`spring framework`, 而大部分`@ConditionalOnXxxx`在`springboot-autoconfig`, 也就是说`@Conditional`其实是`spring framework`, `springboot`只是其扩展
+
+扩展@Conditional的同时, 也需要实现一个处理类实现`org.springframework.context.annotation.Condition`接口
+
+处理这个`Condition`实现类的有三个地方:
+- org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider     处理包扫描到条件装配
+- org.springframework.context.annotation.AnnotatedBeanDefinitionReader                   // TODO: 这个类与上面的区别是?             
+- org.springframework.context.annotation.ConfigurationClassParser                        处理`@Configuration`标注的条件装配
+
+这三个地方最终都会转到统一处理实现 ---- org.springframework.context.annotation.ConditionEvaluator#shouldSkip
     
 
 
