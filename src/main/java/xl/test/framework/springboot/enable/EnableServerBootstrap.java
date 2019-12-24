@@ -1,5 +1,6 @@
 package xl.test.framework.springboot.enable;
 
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @EnableServer(type = Server.ServerType.FTP)
+@EnableAutoConfiguration
 public class EnableServerBootstrap {
 
     public static void main(String[] args){

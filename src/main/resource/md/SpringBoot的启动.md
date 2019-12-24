@@ -63,6 +63,8 @@ webAppliactionType选择
 webServer选择
 ApplicationContext创建
 
+ApplicationListener监听ApplicationEvent
+
 ## AbstractApplicationContext#refresh
 
 ## BeanFactoryPostProcessor扩展点
@@ -73,7 +75,7 @@ ApplicationContext创建
     - `ClassPathScanningCandidateComponentProvider#findCandidateComponents`最后在此方法中扫描/获得`BeanDefinition`, 在`isCandidateComponent(metadataReader)`根据`excludeFilters`, `includeFilters`筛选, `ClassPathScanningCandidateComponentProvider`在初始化的时候会在`includeFilters`中添加`@Component`筛选器
 - `ConfigurationClassPostProcessor` 扫描到所有@Configuration的BeanDefinition, 并解析这些@Configuration 加载bean
     - 加载到@Configuration后, 最终会调用 `ConfigurationClassParser#doProcessConfigurationClass`解析 `@PropertySources` `@ComponentScans` `@ComponentScan` `@ImportResource` `@Import` `@Component` 加载bean或配置文件的注解
-    - `ConfigurationClassParser#doProcessConfigurationClass` 也会解析`ImportSelector`和`ImportBeanDefinitionRegistrar` 获得`ConfigurationClass`, 最终在`ConfigurationClassPostProcessor#processConfigBeanDefinitions`中将这些Configuration实例化并注册
+    - `ConfigurationClassParser#doProcessConfigurationClass` 也会解析`org.springframework.context.annotation.ImportSelector`和`org.springframework.context.annotation.ImportBeanDefinitionRegistrar` 获得`ConfigurationClass`, 最终在`ConfigurationClassPostProcessor#processConfigBeanDefinitions`中将这些Configuration实例化并注册
     
 ### 条件装配: @Conditional
 
@@ -92,7 +94,23 @@ ApplicationContext创建
 
 这三个地方最终都会转到统一处理实现 ---- org.springframework.context.annotation.ConditionEvaluator#shouldSkip
     
+### 自动装配: @EnableAutoConfiguration
+自动装配流程:
+- 编写`XxxxConfiguration`, 标注@Configuration
+- 在 `META-INF/spring.factories`中添加 `org.springframework.boot.autoconfigure.EnableAutoConfiguration=XxxxConfiguration`
 
+自动装配源码解析:
+- 入口为`ConfigurationClassPostProcessor`
+- 在`ConfigurationClassParser#processImports`中处理`org.springframework.boot.autoconfigure.AutoConfigurationImportSelector`, 其是`ImportSelector`的实现类
+- 在`AutoConfigurationImportSelector#selectImports`中, 它做了:
+    - `AutoConfigurationMetadataLoader.loadMetadata(this.beanClassLoader);`加载`"META-INF/spring-autoconfigure-metadata.properties`, 这个文件用于自动过滤, 可以更快速的过滤不满足条件的Configuration, 格式为`自动配置的类全名.条件=值`
+    - 加载`@EnableAutoConfiguration`的元信息, 封装为`AnnotationAttributes`
+    - 从`META-INF/spring.factories`中获得 `org.springframework.boot.autoconfigure.EnableAutoConfiguration`为key的value值, 转换为List<String>
+    - 去重
+    - 过滤: 从`元信息`, `spring.autoconfig.exclude`中获得exclusions参数, 从结果中去除exclusions参数中的值
+    - 自动过滤: 从`/META-INF/spring.factories`中获得`AutoConfigurationImportFilter`, 默认过滤器是`onClassCondition`, 使用其进行过滤, 一般就是看这个Class/Bean有没有
+    - `fireAutoConfigurationImportEvents(configurations, exclusions);`
+        - 从`/META-INF/spring.factories`中获得`AutoConfigurationImportListener`, 其用于监听`AutoConfigurationImportEvent`, 默认内建实现为`ConditionEvaluationReportAutoConfigurationImportListener`, 用于记录自动装配的条件评估详情
 
 ## doGetBean
 

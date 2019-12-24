@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.AutoConfigurationImportListener=\
+  xl.test.framework.springboot.enable.DefaultAutoConfigurationImportListener
