@@ -207,6 +207,8 @@ ApplicationListener监听ApplicationEvent
 
 ## BeanPostProcessor扩展点
 
+ApplicationContextAwareProcessor 注入各种 XxxAware
+
 ## 调用: AbstractAutowireCapableBeanFactory#applyMergedBeanDefinitionPostProcessors
 
 - AutowiredAnnotationBeanPostProcessor 处理@Autowired和@Value
