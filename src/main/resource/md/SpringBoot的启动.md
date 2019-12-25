@@ -112,6 +112,89 @@ ApplicationListener监听ApplicationEvent
     - `fireAutoConfigurationImportEvents(configurations, exclusions);`
         - 从`/META-INF/spring.factories`中获得`AutoConfigurationImportListener`, 其用于监听`AutoConfigurationImportEvent`, 默认内建实现为`ConditionEvaluationReportAutoConfigurationImportListener`, 用于记录自动装配的条件评估详情
 
+
+#### 自动装配的层次性 `DeferredImportSelector`
+
+`DeferredImportSelector`接口会在实现了`ImportSelector`的Configuration注册后再才被注册, 调用的地方在`ConfigurationClassParser#parse`的最后一行代码`this.deferredImportSelectorHandler.process();`
+
+`DeferredImportSelector`有内部接口`DeferredImportSelector.Group`, 在注册的时候会根据`Group`分类, 并按照`Ordered接口`或`@Order`排序后注册, 从而实现了组内的`ImportSelector`注册时的层次性,而组间的注册顺序貌似并没有处理
+
+当然springboot2.1.2版本暂时只有一个实现类`AutoConfigurationImportSelector`, Group实现类为`AutoConfigurationImportSelector.AutoConfigurationGroup`,最终迭代注册的是`ConfigurationClassParser.DeferredImportSelectorGrouping`
+
+疑问:
+
+```ConfigurationClassParser
+	private class DeferredImportSelectorHandler {
+
+		@Nullable
+		private List<DeferredImportSelectorHolder> deferredImportSelectors = new ArrayList<>();
+
+		public void handle(ConfigurationClass configClass, DeferredImportSelector importSelector) {
+			DeferredImportSelectorHolder holder = new DeferredImportSelectorHolder(
+					configClass, importSelector);
+			// 这里是添加DeferredImportSelectorHolder的地方, 为什么deferredImportSelectors还能是null, 难道已经调用了process()方法了, 还能再添加DeferredImportSelectorHolder吗?
+			if (this.deferredImportSelectors == null) {
+				DeferredImportSelectorGroupingHandler handler = new DeferredImportSelectorGroupingHandler();
+				handler.register(holder);
+				handler.processGroupImports();
+			}
+			else {
+				this.deferredImportSelectors.add(holder);
+			}
+		}
+
+		public void process() {
+			List<DeferredImportSelectorHolder> deferredImports = this.deferredImportSelectors;
+			this.deferredImportSelectors = null;
+			try {
+				if (deferredImports != null) {
+					DeferredImportSelectorGroupingHandler handler = new DeferredImportSelectorGroupingHandler();
+					deferredImports.sort(DEFERRED_IMPORT_COMPARATOR);
+					deferredImports.forEach(handler::register);
+					handler.processGroupImports();
+				}
+			}
+			finally {
+				this.deferredImportSelectors = new ArrayList<>();
+			}
+		}
+	}
+```
+
+#### 自动装配的组内排序
+
+- 绝对自动装配排序: @AutoConfigureOrder  不建议使用
+- 相对自动装配排序: @AutoConfigureBefore  @AutoConfigureAfter
+
+源码解析: `AutoConfigurationSorter#getInPriorityOrder`
+
+```
+	public List<String> getInPriorityOrder(Collection<String> classNames) {
+		AutoConfigurationClasses classes = new AutoConfigurationClasses(
+				this.metadataReaderFactory, this.autoConfigurationMetadata, classNames);
+		List<String> orderedClassNames = new ArrayList<>(classNames);
+		// 按照全类名字典顺序排序
+		Collections.sort(orderedClassNames);
+		// 按照@AutoConfigureOrder排序
+		orderedClassNames.sort((o1, o2) -> {
+			int i1 = classes.get(o1).getOrder();
+			int i2 = classes.get(o2).getOrder();
+			return Integer.compare(i1, i2);
+		});
+		// 按照@AutoConfigureBefore @AutoConfigureAfter排序
+		orderedClassNames = sortByAnnotation(classes, orderedClassNames);
+		return orderedClassNames;
+	}
+```
+
+#### spring-autoconfigure-metadata.properties 装配条件及解释
+- Configuration
+- AutoConfigureBefore   X1.AutoConfigureBefore=X2 代表X1在X2之前装配, 等价于`@AutoConfigureBefore`, 优先级高于`@AutoConfigureBefore`
+- AutoConfigureAfter    X1.AutoConfigureAfter=X2  代表X1在X2之后装配, 等价于`@AutoConfigureAfter`, 优先级高于`@AutoConfigureAfter`
+- ConditionalOnClass
+- ConditionalOnBean
+
+
 ## doGetBean
 
 每次bean实例化完成后, 都会调用 `AbstractBeanFactory#getObjectForBeanInstance` 判断得到的bean是不是`FactoryBean`, 如果不是则返回原bean, 如果是则返回`FactoryBean#getBean`的返回值

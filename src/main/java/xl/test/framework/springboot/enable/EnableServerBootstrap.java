@@ -1,8 +1,11 @@
 package xl.test.framework.springboot.enable;
 
+import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * @Enable 模块的应用示例
@@ -34,6 +37,10 @@ public class EnableServerBootstrap {
         server.start();
         //关闭服务器
         server.stop();
+
+        // 获得当前扫描路径
+        List<String> basePackages = AutoConfigurationPackages.get(applicationContext);
+        basePackages.forEach(System.out::println);
         // 关闭上下文
         applicationContext.close();
     }
