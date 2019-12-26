@@ -57,17 +57,165 @@ Implementation-URL: https://projects.spring.io/spring-boot/#/spring-boot-starter
 ```
 最终在run方法中反射调用`Application#main`启动.
 
-## servletcontext层
-reactive?
-webAppliactionType选择
-webServer选择
-ApplicationContext创建
+## SpringApplication启动流程方法分析
 
-ApplicationListener监听ApplicationEvent
+只挑重点代码
 
-## AbstractApplicationContext#refresh
+### SpringApplication() 构造方法
+```
+	public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
+	    // 传入的resourceLoader, 一般为空
+		this.resourceLoader = resourceLoader;
+		Assert.notNull(primarySources, "PrimarySources must not be null");
+		// 启动类, 一般就是标注@SpringbootApplication的类, 当然也可以是别的
+		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+		// 判断当前应用类型, servlet/reactive/none
+		this.webApplicationType = WebApplicationType.deduceFromClasspath();
+		// /META-INF 加载 ApplicationContextInitializer
+		setInitializers((Collection) getSpringFactoriesInstances(
+				ApplicationContextInitializer.class));
+	    // /META-INF 加载 ApplicationListener
+		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+		// 有main方法的启动类
+		this.mainApplicationClass = deduceMainApplicationClass();
+	}
+```
+
+
+### SpringApplication.run()
+```
+        // 初始化监听器, 用于发布Springboot事件
+		SpringApplicationRunListeners listeners = getRunListeners(args);
+		// 发布ApplicationStartingEvent事件
+		listeners.starting();
+		// 传入的args参数解析
+        ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+		// 根据 webApplicationType 配置环境，这里面ConfigFileApplicationListener接收到事件后会调用postProcessEnvironment方法加载application.yml配置文件
+        ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
+        // 处理需要忽略的Bean
+        configureIgnoreBeanInfo(environment);
+        // 打印banner
+        Banner printedBanner = printBanner(environment);
+        // 根据 webApplicationType 创建Spring的ApplicationContext
+        ConfigurableApplicationContext context = createApplicationContext();
+        // 刷新应用上下文前的准备阶段, TODO
+        prepareContext(context, environment, listeners, applicationArguments, printedBanner);
+        // 刷新应用上下文, 最重要, 里面调用了 AbstractApplicationContext.refresh
+        refreshContext(context);
+        //刷新应用上下文后的扩展接口, TODO
+        afterRefresh(context, applicationArguments);
+        // 发布ApplicationStartedEvent事件
+        listeners.started(context);
+        
+        callRunners(context, applicationArguments);
+        // 发布ApplicationReadyEvent事件
+		listeners.running(context);
+```
+
+### AbstractApplicationContext.refresh()
+
+TODO
+```
+        // Prepare this context for refreshing.
+        prepareRefresh();
+
+        // Tell the subclass to refresh the internal bean factory.
+        ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
+
+        // Prepare the bean factory for use in this context.
+        prepareBeanFactory(beanFactory);
+
+        try {
+            // Allows post-processing of the bean factory in context subclasses.
+            postProcessBeanFactory(beanFactory);
+
+            // Invoke factory processors registered as beans in the context.
+            invokeBeanFactoryPostProcessors(beanFactory);
+
+            // Register bean processors that intercept bean creation.
+            registerBeanPostProcessors(beanFactory);
+
+            // Initialize message source for this context.
+            initMessageSource();
+
+            // Initialize event multicaster for this context.
+            initApplicationEventMulticaster();
+
+            // Initialize other special beans in specific context subclasses.
+            onRefresh();
+
+            // Check for listener beans and register them.
+            registerListeners();
+
+            // Instantiate all remaining (non-lazy-init) singletons.
+            finishBeanFactoryInitialization(beanFactory);
+
+            // Last step: publish corresponding event.
+            finishRefresh();
+        }
+
+        catch (BeansException ex) {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Exception encountered during context initialization - " +
+                        "cancelling refresh attempt: " + ex);
+            }
+
+            // Destroy already created singletons to avoid dangling resources.
+            destroyBeans();
+
+            // Reset 'active' flag.
+            cancelRefresh(ex);
+
+            // Propagate exception to caller.
+            throw ex;
+        }
+
+        finally {
+            // Reset common introspection caches in Spring's core, since we
+            // might not ever need metadata for singleton beans anymore...
+            resetCommonCaches();
+        }
+
+```
+
+## 监听器, 观察者模式
+
+从META-INF获得默认的
+- `SpringApplicationRunListener`   Springboot事件监听器, 只有一个实现`EventPublishingRunListener`, 主要将事件转发给众多的`ApplicationListener`
+- `ApplicationListener` 真正干事的listener, 可以根据泛型的实现有选择得监听事件, 参考`ListenerCacheKey`
+
+
+Spring内建事件, 按发布先后顺序排序
+- ContextRefreshEvent Spring应用上下文就绪事件, `AbstractApplicationContext#finishRefresh`
+- RequestHandledEvent Spring应用上下文就绪事件
+- ContextClosedEvent  Spring应用上下文关闭事件, `AbstractApplicationContext#doClose()`
+- ContextStartedEvent Spring应用上下文启动事件, `AbstractApplicationContext#start`, 没有被调用
+- ContextStoppedEvent Spring应用上下文停止事件, `AbstractApplicationContext#stop`, 没有被调用
+
+SpringBoot内建事件, 按发布先后顺序排序
+- ApplicationStartingEvent
+- ApplicationEnvironmentPreparedEvent
+- ApplicationContextInitializedEvent
+- ApplicationPreparedEvent
+- ApplicationStartedEvent
+- ApplicationReadyEvent
+- ApplicationFailedEvent
+
+监听器的使用请参考 `xl.test.framework.springboot.listener` 包下的类
+
 
 ## BeanFactoryPostProcessor扩展点
+
+### BeanFactoryPostProcessor注册:
+- AnnotationConfigUtils.registerAnnotationConfigProcessors(), 其中自动注册了
+    - ConfigurationClassPostProcessor
+    - AutowiredAnnotationBeanPostProcessor
+    - CommonAnnotationBeanPostProcessor
+    - EventListenerMethodProcessor
+    - DefaultEventListenerFactory
+- ImportBeanDefinitionRegistrar和ImportSelector 自定义注册
+
+### 用途示例
 
 主要用于bean的加载
 
@@ -76,7 +224,9 @@ ApplicationListener监听ApplicationEvent
 - `ConfigurationClassPostProcessor` 扫描到所有@Configuration的BeanDefinition, 并解析这些@Configuration 加载bean
     - 加载到@Configuration后, 最终会调用 `ConfigurationClassParser#doProcessConfigurationClass`解析 `@PropertySources` `@ComponentScans` `@ComponentScan` `@ImportResource` `@Import` `@Component` 加载bean或配置文件的注解
     - `ConfigurationClassParser#doProcessConfigurationClass` 也会解析`org.springframework.context.annotation.ImportSelector`和`org.springframework.context.annotation.ImportBeanDefinitionRegistrar` 获得`ConfigurationClass`, 最终在`ConfigurationClassPostProcessor#processConfigBeanDefinitions`中将这些Configuration实例化并注册
-    
+- `EventListenerMethodProcessor`获得所有EventListenerFactory实例, 通过这些实例获得`ApplicationListener`并将其加入ApplicationContext使其生效
+
+
 ### 条件装配: @Conditional
 
 @Conditional 扩展出了很多注解, 比如
@@ -193,6 +343,9 @@ ApplicationListener监听ApplicationEvent
 - AutoConfigureAfter    X1.AutoConfigureAfter=X2  代表X1在X2之后装配, 等价于`@AutoConfigureAfter`, 优先级高于`@AutoConfigureAfter`
 - ConditionalOnClass
 - ConditionalOnBean
+
+## ApplicationContextInitializer
+
 
 
 ## doGetBean
