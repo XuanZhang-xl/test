@@ -1,4 +1,4 @@
-# SpringBoot启动流程
+# SpringBoot2.1.2启动流程
 
 ## 启动前
 
@@ -69,7 +69,10 @@ Implementation-URL: https://projects.spring.io/spring-boot/#/spring-boot-starter
 		Assert.notNull(primarySources, "PrimarySources must not be null");
 		// 启动类, 一般就是标注@SpringbootApplication的类, 当然也可以是别的
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
-		// 判断当前应用类型, servlet/reactive/none
+		// 判断当前应用类型, servlet/reactive/none, 根据当前应用类型会分别实例化以下ApplicationContext
+		// servlet   AnnotationConfigServletWebServerApplicationContext
+		// reactive  AnnotationConfigReactiveWebServerApplicationContext
+		// none	     AnnotationConfigApplicationContext
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
 		// /META-INF 加载 ApplicationContextInitializer
 		setInitializers((Collection) getSpringFactoriesInstances(
@@ -100,57 +103,113 @@ Implementation-URL: https://projects.spring.io/spring-boot/#/spring-boot-starter
         ConfigurableApplicationContext context = createApplicationContext();
         // 刷新应用上下文前的准备阶段, TODO
         prepareContext(context, environment, listeners, applicationArguments, printedBanner);
-        // 刷新应用上下文, 最重要, 里面调用了 AbstractApplicationContext.refresh
+        // 刷新应用上下文, 最重要, 里面调用了 AbstractApplicationContext.refresh, 以及注册ShutdownHook线程
         refreshContext(context);
-        //刷新应用上下文后的扩展接口, TODO
+        //刷新应用上下文后的扩展接口, 空实现
         afterRefresh(context, applicationArguments);
         // 发布ApplicationStartedEvent事件
         listeners.started(context);
-        
+        // 执行ApplicationRunner和CommandLineRunner, 注册为bean之后, 会在springboot启动完成之前会执行run()方法, 貌似并无卵用
         callRunners(context, applicationArguments);
         // 发布ApplicationReadyEvent事件
 		listeners.running(context);
 ```
+### SpringApplication.prepareContext()
+在SpringApplication.run()中调用
+```
+	private void prepareContext(ConfigurableApplicationContext context, ConfigurableEnvironment environment, SpringApplicationRunListeners listeners, ApplicationArguments applicationArguments, Banner printedBanner) {
+		// 设置环境
+		context.setEnvironment(environment);
+		// 设置用户配置的beanNameGenerator(用于bean命名), resourceLoader(用于resource加载, 如application.properties), addConversionService(TODO)
+		postProcessApplicationContext(context);
+		// 执行初始化器
+		applyInitializers(context);
+		// 发布ApplicationContextInitializedEvent事件
+		listeners.contextPrepared(context);
+		// Add boot specific singleton beans  注册些看似没什么用的bean
+		ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
+		beanFactory.registerSingleton("springApplicationArguments", applicationArguments);
+		if (printedBanner != null) {
+			beanFactory.registerSingleton("springBootBanner", printedBanner);
+		}
+		if (beanFactory instanceof DefaultListableBeanFactory) {
+			((DefaultListableBeanFactory) beanFactory).setAllowBeanDefinitionOverriding(this.allowBeanDefinitionOverriding);
+		}
+		// Load the sources 就是启动时传入的class类型以及setSources()增加的类名, 包名, xml资源路径等
+		Set<Object> sources = getAllSources();
+		// 注册sources中的bean
+		load(context, sources.toArray(new Object[0]));
+		// 发布ApplicationPreparedEvent事件
+		listeners.contextLoaded(context);
+	}
+```
+
 
 ### AbstractApplicationContext.refresh()
+在SpringApplication.run()中调用
 
-TODO
+接下来的方法分析要涉及具体的`ApplicationContext`实现类, 先来分析一下具体要哪些实现类.
+
+根据`webApplicationType`, `ApplicationContext`实例为
+- `AnnotationConfigServletWebServerApplicationContext`
+- `AnnotationConfigReactiveWebServerApplicationContext`
+- `AnnotationConfigApplicationContext`
+
+以上三种类型都是`GenericApplicationContext`的子类, 所以我们看其实现
+
+
 ```
-        // Prepare this context for refreshing.
+        // 准备刷新的上下文环境
         prepareRefresh();
 
-        // Tell the subclass to refresh the internal bean factory.
+        // 此方法在GenericApplicationContext中就 指定序列化id, 可以从这个id反序列化到BeanFactory
         ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
-        // Prepare the bean factory for use in this context.
+        // 注册,配置了一系列的bean, 主要功能有:
+        // 增加对spel语言的支持   StandardBeanExpressionResolver
+        // 增加对属性编辑器的支持  ResourceEditorRegistrar
+        // 注册了一些BeanPostProcessor, 如 ApplicationContextAwareProcessor  ApplicationListenerDetector  LoadTimeWeaverAwareProcessor
+        // 增加Aspectj的支持
+        // 注册Environment
+        // 忽略各种注入Aware的接口
         prepareBeanFactory(beanFactory);
 
         try {
             // Allows post-processing of the bean factory in context subclasses.
+            // 入源码所说, 这是空实现, 留给子类扩展
             postProcessBeanFactory(beanFactory);
 
-            // Invoke factory processors registered as beans in the context.
+            // 调用 `BeanFactoryPostProcessor.postProcessBeanFactory()`
+            // 此方法中会实例化一些系统自己注册的bean
             invokeBeanFactoryPostProcessors(beanFactory);
 
             // Register bean processors that intercept bean creation.
+            // 注册BeanPostProcessors
             registerBeanPostProcessors(beanFactory);
 
             // Initialize message source for this context.
+            // 初始化Message源, 即不同语言的消息体, 国际化处理
             initMessageSource();
 
             // Initialize event multicaster for this context.
+            // 初始化应用消息广播器, 并放入 applicationEventMulticaster 中
             initApplicationEventMulticaster();
 
             // Initialize other special beans in specific context subclasses.
+            // 留给子类来初始化其他bean
             onRefresh();
 
             // Check for listener beans and register them.
+            // 在所有注册的bean中查找ApplicationListener, 并注册到应用消息广播器
             registerListeners();
 
             // Instantiate all remaining (non-lazy-init) singletons.
+            // 初始化剩下的单实例(非惰性)
             finishBeanFactoryInitialization(beanFactory);
 
             // Last step: publish corresponding event.
+            // LifecycleProcessor 刷新过程
+            // 发送ContextRefreshedEvent消息
             finishRefresh();
         }
 
@@ -178,6 +237,7 @@ TODO
 
 ```
 
+
 ## 监听器, 观察者模式
 
 从META-INF获得默认的
@@ -203,21 +263,30 @@ SpringBoot内建事件, 按发布先后顺序排序
 
 监听器的使用请参考 `xl.test.framework.springboot.listener` 包下的类
 
+## ApplicationContextInitializer 初始化器
+
+默认四个初始化器
+- ConfigurationWarningsApplicationContextInitializer    貌似就是打几个warn日志
+- ContextIdApplicationContextInitializer                初始化ContextId. 从`spring.application.name`属性获取. 没有的话默认为`application`
+- DelegatingApplicationContextInitializer               从`context.initializer.classes`属性获得ApplicationContextInitializer并实例化
+- ServerPortInfoApplicationContextInitializer           这个初始化器同时也是一个监听器, 监听WebServerInitializedEvent事件,服务启动后将端口设置到Environment中去, `server.ports=xxx`
+
 
 ## BeanFactoryPostProcessor扩展点
 
+其会在`AbstractApplicationContext.invokeBeanFactoryPostProcessors`中被调用, 这个时候Spring已经准备好基本的BeanDefinition了, 这是Spring留下的一个修改BeanDefinition的扩展
+
+BeanFactoryPostProcessor需要手动调用AbstractApplicationContext#addBeanFactoryPostProcessor注册
+
 ### BeanFactoryPostProcessor注册:
 - AnnotationConfigUtils.registerAnnotationConfigProcessors(), 其中自动注册了
-    - ConfigurationClassPostProcessor
-    - AutowiredAnnotationBeanPostProcessor
-    - CommonAnnotationBeanPostProcessor
-    - EventListenerMethodProcessor
-    - DefaultEventListenerFactory
+    - ConfigurationClassPostProcessor    处理ImportBeanDefinitionRegistrar和ImportSelector并把结果迭代处理
+    - EventListenerMethodProcessor       处理@EventListener
 - ImportBeanDefinitionRegistrar和ImportSelector 自定义注册
 
 ### 用途示例
 
-主要用于bean的加载
+主要用于BeanDefinition的加载
 
 - `MapperScannerConfigurer` 扫描mybatis的mapper.java 加载进入ApplicationContext
     - `ClassPathScanningCandidateComponentProvider#findCandidateComponents`最后在此方法中扫描/获得`BeanDefinition`, 在`isCandidateComponent(metadataReader)`根据`excludeFilters`, `includeFilters`筛选, `ClassPathScanningCandidateComponentProvider`在初始化的时候会在`includeFilters`中添加`@Component`筛选器
@@ -225,6 +294,10 @@ SpringBoot内建事件, 按发布先后顺序排序
     - 加载到@Configuration后, 最终会调用 `ConfigurationClassParser#doProcessConfigurationClass`解析 `@PropertySources` `@ComponentScans` `@ComponentScan` `@ImportResource` `@Import` `@Component` 加载bean或配置文件的注解
     - `ConfigurationClassParser#doProcessConfigurationClass` 也会解析`org.springframework.context.annotation.ImportSelector`和`org.springframework.context.annotation.ImportBeanDefinitionRegistrar` 获得`ConfigurationClass`, 最终在`ConfigurationClassPostProcessor#processConfigBeanDefinitions`中将这些Configuration实例化并注册
 - `EventListenerMethodProcessor`获得所有EventListenerFactory实例, 通过这些实例获得`ApplicationListener`并将其加入ApplicationContext使其生效
+
+### 调用的先后顺序
+
+即PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors() 的实现
 
 
 ### 条件装配: @Conditional
@@ -343,9 +416,6 @@ SpringBoot内建事件, 按发布先后顺序排序
 - AutoConfigureAfter    X1.AutoConfigureAfter=X2  代表X1在X2之后装配, 等价于`@AutoConfigureAfter`, 优先级高于`@AutoConfigureAfter`
 - ConditionalOnClass
 - ConditionalOnBean
-
-## ApplicationContextInitializer
-
 
 
 ## doGetBean

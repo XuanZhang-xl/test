@@ -1,2 +1,8 @@
 org.springframework.boot.autoconfigure.AutoConfigurationImportListener=\
   xl.test.framework.springboot.enable.DefaultAutoConfigurationImportListener
+
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+  xl.test.framework.springboot.error.UnknownErrorFailureAnalyzer
+
+org.springframework.boot.diagnostics.FailureAnalysisReporter=\
+  xl.test.framework.springboot.error.ConsoleFailureAnalysisReport

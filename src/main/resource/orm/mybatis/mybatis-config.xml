@@ -17,7 +17,7 @@
         <setting name="mapUnderscoreToCamelCase" value="true"/>
     </settings>
     <typeAliases>
-        <typeAlias type="xl.test.javabasic.orm.User" alias="User"/>
+        <typeAlias type="xl.test.User" alias="User"/>
     </typeAliases>
 
     <environments default="dev">

@@ -1,22 +1,12 @@
 package xl.test.javabasic.orm.mybatis;
 
 import com.alibaba.fastjson.JSON;
-import org.apache.ibatis.builder.xml.XMLMapperBuilder;
-import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
-import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
-import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
-import org.apache.ibatis.type.TypeAliasRegistry;
 import org.junit.Test;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.core.io.support.ResourcePatternResolver;
 import xl.test.javabasic.orm.OrmPropertyGetter;
-import xl.test.javabasic.orm.MapperLocation;
-import xl.test.javabasic.orm.User;
+import xl.test.User;
 
 import javax.sql.DataSource;
 import java.io.IOException;
