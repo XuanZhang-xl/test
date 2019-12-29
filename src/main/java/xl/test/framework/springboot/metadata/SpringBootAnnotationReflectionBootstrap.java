@@ -66,6 +66,7 @@ public class SpringBootAnnotationReflectionBootstrap {
             return Collections.emptySet();
         }
         Set<Annotation> metaAnnotationSet = Stream.of(annotations)
+                // 无视 @Target 所在包下的所有注解, 因为这些注解会循环依赖导致死循环
                 .filter(metaAnnotation -> !Target.class.getPackage().equals(metaAnnotation.annotationType().getPackage()))
                 .collect(Collectors.toSet());
 

@@ -21,4 +21,10 @@ import java.lang.annotation.Target;
 public @interface TransactionService {
 
     String name() default "";
+
+    /**
+     * 覆盖 @Transactional.transactionManager()的默认值
+     * @return
+     */
+    String transactionManager() default "txManager";
 }
