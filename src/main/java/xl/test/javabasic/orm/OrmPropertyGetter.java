@@ -23,10 +23,43 @@ import java.sql.Driver;
  */
 public class OrmPropertyGetter {
 
+    private static String userName = "";
+
+    static {
+        userName = System.getProperty("user.name");
+    }
+
     public static DataSource getDataSource() throws ClassNotFoundException {
+        if ("MSI-PC".equals(userName)) {
+            return getDataSourceAtHome();
+        } else {
+            return getDataSourceOutSide();
+        }
+    }
+
+    /**
+     * 外网DataSource
+     * @return
+     * @throws ClassNotFoundException
+     */
+    public static DataSource getDataSourceOutSide() throws ClassNotFoundException {
         SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
         dataSource.setDriverClass((Class<? extends Driver>) Class.forName("com.mysql.jdbc.Driver"));
         dataSource.setUrl("jdbc:mysql://222.65.172.130:3306/test?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8&useSSL=false");
+        dataSource.setUsername("xuan");
+        dataSource.setPassword("xuan");
+        return dataSource;
+    }
+
+    /**
+     * 内网DataSource
+     * @return
+     * @throws ClassNotFoundException
+     */
+    public static DataSource getDataSourceAtHome() throws ClassNotFoundException {
+        SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
+        dataSource.setDriverClass((Class<? extends Driver>) Class.forName("com.mysql.jdbc.Driver"));
+        dataSource.setUrl("jdbc:mysql://192.168.2.107:3306/test?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8&useSSL=false");
         dataSource.setUsername("xuan");
         dataSource.setPassword("xuan");
         return dataSource;
@@ -66,6 +99,10 @@ public class OrmPropertyGetter {
     }
     public static SqlSessionFactory getSqlSessionFactory(Configuration configuration) {
         return new SqlSessionFactoryBuilder().build(configuration);
+    }
+
+    public static void main(String[] args) {
+        System.getProperties().entrySet().forEach(System.out::println);
     }
 
 }

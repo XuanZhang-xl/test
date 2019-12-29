@@ -6,6 +6,8 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -36,19 +38,37 @@ public class MybatisUsingSpringBootTest {
         applicationContext.close();
     }
 
-
+    /**
+     * 条件装配
+     * user.name=MSI-PC时装配
+     * @return
+     * @throws ClassNotFoundException
+     */
     @Bean
-    public DataSource getDataSource() throws ClassNotFoundException {
-        return OrmPropertyGetter.getDataSource();
+    @ConditionalOnProperty(prefix = "user", name = "name", havingValue = "MSI-PC")
+    public DataSource dataSourceAtHome() throws ClassNotFoundException {
+        return OrmPropertyGetter.getDataSourceAtHome();
+    }
+
+    /**
+     * 条件装配
+     * 当不存在DataSource实例时装配
+     * @return
+     * @throws ClassNotFoundException
+     */
+    @Bean
+    @ConditionalOnMissingBean(DataSource.class)
+    public DataSource dataSource() throws ClassNotFoundException {
+        return OrmPropertyGetter.getDataSourceOutSide();
     }
 
     @Bean
-    public Configuration getConfiguration(DataSource dataSource) throws IOException, ClassNotFoundException {
+    public Configuration mybatisConfiguration(DataSource dataSource) throws IOException, ClassNotFoundException {
         return OrmPropertyGetter.getConfiguration(dataSource);
     }
 
     @Bean
-    public SqlSessionFactory getSqlSessionFactory(Configuration configuration) {
+    public SqlSessionFactory qqlSessionFactory(Configuration configuration) {
         return OrmPropertyGetter.getSqlSessionFactory(configuration);
     }
 }
