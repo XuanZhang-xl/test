@@ -2,7 +2,7 @@ package xl.test.javabasic.orm.jdbc;
 
 
 import org.springframework.jdbc.core.RowMapper;
-import xl.test.javabasic.orm.User;
+import xl.test.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

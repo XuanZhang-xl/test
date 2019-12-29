@@ -215,6 +215,7 @@
                 <directory>src/main/resource</directory>
                 <includes>
                     <include>**/*.xml</include>
+                    <include>META-INF/**/*.*</include>
                 </includes>
             </resource>
         </resources>

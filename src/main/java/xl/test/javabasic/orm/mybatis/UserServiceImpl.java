@@ -3,7 +3,7 @@ package xl.test.javabasic.orm.mybatis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xl.test.javabasic.orm.User;
+import xl.test.User;
 import xl.test.javabasic.orm.UserService;
 
 import java.util.List;

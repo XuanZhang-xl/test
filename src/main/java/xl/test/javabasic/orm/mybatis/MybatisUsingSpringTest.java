@@ -3,7 +3,7 @@ package xl.test.javabasic.orm.mybatis;
 import com.alibaba.fastjson.JSON;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import xl.test.javabasic.orm.User;
+import xl.test.User;
 import xl.test.javabasic.orm.UserService;
 
 import java.io.IOException;

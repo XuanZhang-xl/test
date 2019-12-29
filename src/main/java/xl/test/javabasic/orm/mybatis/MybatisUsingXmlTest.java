@@ -6,7 +6,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import xl.test.javabasic.orm.MapperLocation;
-import xl.test.javabasic.orm.User;
+import xl.test.User;
 
 import java.io.IOException;
 import java.io.Reader;

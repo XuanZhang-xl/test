@@ -1,4 +1,4 @@
-package xl.test.javabasic.orm;
+package xl.test;
 
 import java.util.Random;
 
