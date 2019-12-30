@@ -3,8 +3,8 @@ package xl.test.javabasic.orm.mybatis;
 import com.alibaba.fastjson.JSON;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import xl.test.User;
-import xl.test.javabasic.orm.UserService;
+import xl.test.common.entity.User;
+import xl.test.common.service.UserService;
 
 import java.io.IOException;
 import java.util.List;

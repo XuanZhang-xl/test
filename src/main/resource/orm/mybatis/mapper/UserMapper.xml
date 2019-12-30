@@ -4,11 +4,11 @@
   <sql id="Base_Column_List">
     id, sid, assignee, role_id, assignee_type, activti_name
   </sql>
-  <insert id="save" parameterType="xl.test.User">
+  <insert id="save" parameterType="xl.test.common.entity.User">
     insert into user(name,age,sex) values (#{name},#{age},#{sex})
   </insert>
 
-  <select id="listUser" resultType="xl.test.User">
+  <select id="listUser" resultType="xl.test.common.entity.User">
     select * from user
   </select>
 </mapper>

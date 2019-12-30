@@ -1,6 +1,6 @@
-package xl.test.javabasic.orm;
+package xl.test.common.service;
 
-import xl.test.User;
+import xl.test.common.entity.User;
 
 import java.util.List;
 

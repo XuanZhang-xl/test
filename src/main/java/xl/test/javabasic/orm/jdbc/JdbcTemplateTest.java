@@ -2,7 +2,7 @@ package xl.test.javabasic.orm.jdbc;
 
 import com.alibaba.fastjson.JSONObject;
 import xl.test.javabasic.orm.OrmPropertyGetter;
-import xl.test.User;
+import xl.test.common.entity.User;
 
 import javax.sql.DataSource;
 import java.util.List;

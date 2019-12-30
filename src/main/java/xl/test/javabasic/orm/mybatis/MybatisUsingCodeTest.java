@@ -6,7 +6,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.junit.Test;
 import xl.test.javabasic.orm.OrmPropertyGetter;
-import xl.test.User;
+import xl.test.common.entity.User;
 
 import javax.sql.DataSource;
 import java.io.IOException;

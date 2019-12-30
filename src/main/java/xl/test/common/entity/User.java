@@ -1,4 +1,6 @@
-package xl.test;
+package xl.test.common.entity;
+
+import com.alibaba.fastjson.JSON;
 
 import java.util.Random;
 
@@ -58,5 +60,10 @@ public class User {
         }
         user.setName(name.toString());
         return user;
+    }
+
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this);
     }
 }

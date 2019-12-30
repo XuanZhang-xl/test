@@ -1,6 +1,6 @@
 package xl.test.javabasic.orm.mybatis;
 
-import xl.test.User;
+import xl.test.common.entity.User;
 
 import java.util.List;
 

@@ -2,7 +2,7 @@ package xl.test.framework.springboot.postprocessor;
 
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
-import xl.test.User;
+import xl.test.common.entity.User;
 
 /**
  * 从 PostProcessorRegistrationDelegate#invokeBeanFactoryPostProcessors() 这个方法中可以明显看到执行顺序

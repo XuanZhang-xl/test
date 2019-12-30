@@ -1,8 +1,8 @@
 package xl.test.javabasic.orm.jdbc;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import xl.test.User;
-import xl.test.javabasic.orm.UserService;
+import xl.test.common.entity.User;
+import xl.test.common.service.UserService;
 
 import javax.sql.DataSource;
 import java.sql.Types;

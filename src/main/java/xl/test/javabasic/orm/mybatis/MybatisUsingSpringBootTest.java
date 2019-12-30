@@ -14,8 +14,8 @@ import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import xl.test.javabasic.orm.OrmPropertyGetter;
-import xl.test.User;
-import xl.test.javabasic.orm.UserService;
+import xl.test.common.entity.User;
+import xl.test.common.service.UserService;
 
 import javax.sql.DataSource;
 import java.io.IOException;
