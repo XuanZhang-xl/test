@@ -428,7 +428,140 @@ TODO: 比如 OnBeanCondition 有getOutcomes 与getMatchOutcome两个匹配方法
 - MapperFactoryBean 返回mapper的代理类
 
 
-## Aop切入点
+## Aop
+
+JDK动态代理: 代理对象必须是某接口的实现, 因为它是通过创建 `extends Proxy implements 某接口`这样的类来实现的
+CGLIB动态代理:实现原理类似JDK动态代理, 但是它是 直接继承的被代理对象, 底层依靠ASM操作字节码, 性能比JDK高
+
+从`@EnableAspectJAutoProxy`开始分析, 它引入了`AspectJAutoProxyRegistrar`
+`AspectJAutoProxyRegistrar`中有一行这样的代码:
+```
+AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(registry);
+```
+点进去后发现其注册了`AnnotationAwareAspectJAutoProxyCreator`, 而`AnnotationAwareAspectJAutoProxyCreator`是`BeanPostProcessor`的实现类
+至此, aop引入流程明了.
+
+### AnnotationAwareAspectJAutoProxyCreator
+
+```
+	public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
+		if (bean != null) {
+			Object cacheKey = getCacheKey(bean.getClass(), beanName);
+			if (!this.earlyProxyReferences.contains(cacheKey)) {
+				return wrapIfNecessary(bean, beanName, cacheKey);
+			}
+		}
+		return bean;
+	}
+```
+### AbstractAutoProxyCreator
+
+AbstractAutoProxyCreator成员变量
+- `Set<String> targetSourcedBeans`
+- `Set<Object> earlyProxyReferences`
+- `Map<Object, Class<?>> proxyTypes`
+- `Map<Object, Boolean> advisedBeans`    存放aop基础信息类, 用于代理时跳过基础信息类, 如标注@Aspectj的类, 继承Advisor的类等, 具体见方法`isInfrastructureClass()`
+
+
+#### AbstractAutoProxyCreator#createProxy
+
+```
+	protected Object createProxy(Class<?> beanClass, @Nullable String beanName, @Nullable Object[] specificInterceptors, TargetSource targetSource) {
+	    // 貌似是spring5新加逻辑, 用处TODO
+		if (this.beanFactory instanceof ConfigurableListableBeanFactory) {
+			AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
+		}
+
+		ProxyFactory proxyFactory = new ProxyFactory();
+		// 获得当前类中相关属性, 如proxyTargetClass, exposeProxy等
+		proxyFactory.copyFrom(this);
+
+        // proxyTargetClass默认false, 貌似用于仅代理接口方法还是代理整个类的区分
+		if (!proxyFactory.isProxyTargetClass()) {
+			if (shouldProxyTargetClass(beanClass, beanName)) {
+				proxyFactory.setProxyTargetClass(true);
+			}
+			else {
+			    // 里面会判断添加代理接口或proxyFactory.setProxyTargetClass(true);
+				evaluateProxyInterfaces(beanClass, proxyFactory);
+			}
+		}
+
+		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
+		// 加入增强器
+		proxyFactory.addAdvisors(advisors);
+		// 设置要代理的类
+		proxyFactory.setTargetSource(targetSource);
+		// 定制代理
+		customizeProxyFactory(proxyFactory);
+		// 用来控制代理被配置后, 是否还允许修改通知, 默认fasle, 即一旦代理被配置, 不允许修改代理
+		proxyFactory.setFrozen(this.freezeProxy);
+		if (advisorsPreFiltered()) {
+			proxyFactory.setPreFiltered(true);
+		}
+
+		return proxyFactory.getProxy(getProxyClassLoader());
+	}
+```
+
+上面方法中的buildAdvisors()方法的主要逻辑
+
+```
+	public Advisor wrap(Object adviceObject) throws UnknownAdviceTypeException {
+	    // 如果要封装的对象本身是Advisor, 不做处理
+		if (adviceObject instanceof Advisor) {
+			return (Advisor) adviceObject;
+		}
+		// 本方法只对Advisor和Advice有效, 其他抛异常
+		if (!(adviceObject instanceof Advice)) {
+			throw new UnknownAdviceTypeException(adviceObject);
+		}
+		// 如果是MethodInterceptor则使用DefaultPointcutAdvisor封装
+		Advice advice = (Advice) adviceObject;
+		if (advice instanceof MethodInterceptor) {
+			// So well-known it doesn't even need an adapter.
+			return new DefaultPointcutAdvisor(advice);
+		}
+		// 如果存在Advisor适配器也封装
+		for (AdvisorAdapter adapter : this.adapters) {
+			// Check that it is supported.
+			if (adapter.supportsAdvice(advice)) {
+				return new DefaultPointcutAdvisor(advice);
+			}
+		}
+		throw new UnknownAdviceTypeException(advice);
+	}
+```
+### DefaultAopProxyFactory.createAopProxy() 代理方式的选择与创建
+
+JDK代理还是CGLIB代理的选择
+- optimize: 控制通过CGLIB创建的代理是否使用激进的优化策略, 仅CGLIB有效, 尽量不要修改
+- proxyTargetClass: 为true时, 目标类本身被代理而不是目标类接口, 也就是CGLIB代理
+- Proxy.isProxyClass() 是否存在代理接口
+
+```
+    // 这个AdvisedSupport就是上面的proxyFactory
+	public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
+		if (config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config)) {
+			Class<?> targetClass = config.getTargetClass();
+			if (targetClass == null) {
+				throw new AopConfigException("TargetSource cannot determine target class: " +
+						"Either an interface or a target is required for proxy creation.");
+			}
+			if (targetClass.isInterface() || Proxy.isProxyClass(targetClass)) {
+				return new JdkDynamicAopProxy(config);
+			}
+			return new ObjenesisCglibAopProxy(config);
+		}
+		else {
+			return new JdkDynamicAopProxy(config);
+		}
+	}
+```
+### 获取代理
+
+
+
 
 ### AbstractAutowireCapableBeanFactory#resolveBeforeInstantiation
 
