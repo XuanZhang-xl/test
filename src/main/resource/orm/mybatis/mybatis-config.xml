@@ -25,7 +25,7 @@
             <transactionManager type="jdbc"/>
             <dataSource type="POOLED">
                 <property name="driver" value="com.mysql.jdbc.Driver"></property>
-                <property name="url" value="jdbc:mysql://222.65.172.130:3306/test?allowMultiQueries=true&amp;useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false"></property>
+                <property name="url" value="jdbc:mysql://180.171.150.60:3306/test?allowMultiQueries=true&amp;useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false"></property>
                 <property name="username" value="xuan"></property>
                 <property name="password" value="xuan"></property>
             </dataSource>

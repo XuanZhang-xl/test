@@ -12,7 +12,7 @@
     <!-- 数据源 -->
     <bean id="dataSource" class="org.springframework.jdbc.datasource.SimpleDriverDataSource">
         <property name="driver" ref="driver"/>
-        <property name="url" value="jdbc:mysql://222.65.172.130:3306/test?allowMultiQueries=true&amp;useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false"/>
+        <property name="url" value="jdbc:mysql://180.171.150.60:3306/test?allowMultiQueries=true&amp;useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false"/>
         <property name="username" value="xuan"/>
         <property name="password" value="xuan"/>
     </bean>

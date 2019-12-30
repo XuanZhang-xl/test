@@ -10,7 +10,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import xl.test.javabasic.orm.OrmPropertyGetter;
 import xl.test.User;
 import xl.test.javabasic.orm.UserService;
@@ -26,7 +28,7 @@ import java.util.List;
  */
 @MapperScan(basePackages = {"xl.test.javabasic.orm.mybatis"})
 @SpringBootApplication(scanBasePackages={"xl.test.javabasic.orm.mybatis"})
-public class MybatisUsingSpringBootTest {
+public class MybatisUsingSpringBootTest implements EnvironmentAware {
 
     public static void main(String[] args) throws ClassNotFoundException, IOException {
 
@@ -70,5 +72,13 @@ public class MybatisUsingSpringBootTest {
     @Bean
     public SqlSessionFactory qqlSessionFactory(Configuration configuration) {
         return OrmPropertyGetter.getSqlSessionFactory(configuration);
+    }
+
+    @Override
+    public void setEnvironment(Environment environment) {
+        // 把公网ip set进去
+        OrmPropertyGetter.setWlanIp(environment.getProperty("wlan.ip"));
+        // 把内网ip set进去
+        OrmPropertyGetter.setLanIp(environment.getProperty("lan.ip"));
     }
 }

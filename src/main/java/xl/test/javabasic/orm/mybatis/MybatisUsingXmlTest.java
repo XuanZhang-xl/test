@@ -13,6 +13,7 @@ import java.io.Reader;
 import java.util.List;
 
 /**
+ * 公网ip一变, 就可能报错
  * created by XUAN on 2019/12/13
  */
 public class MybatisUsingXmlTest {
