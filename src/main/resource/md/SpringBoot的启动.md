@@ -204,11 +204,13 @@ Implementation-URL: https://projects.spring.io/spring-boot/#/spring-boot-starter
             registerListeners();
 
             // Instantiate all remaining (non-lazy-init) singletons.
-            // 初始化剩下的单实例(非惰性)
+            // 找出ConversionService 转换类. 方便使用
+            // 冻结bean的定义, bean定义将不能再修改
+            // 初始化剩下的单实例(非惰性)bean, 会遍历所有beanName, 调用getBean()方法初始化bean
             finishBeanFactoryInitialization(beanFactory);
 
             // Last step: publish corresponding event.
-            // LifecycleProcessor 刷新过程
+            // LifecycleProcessor 刷新过程  DefaultLifecycleProcessor
             // 发送ContextRefreshedEvent消息
             finishRefresh();
         }
@@ -316,6 +318,8 @@ BeanFactoryPostProcessor需要手动调用AbstractApplicationContext#addBeanFact
 - org.springframework.context.annotation.ConfigurationClassParser                        处理`@Configuration`标注的条件装配
 
 这三个地方最终都会转到统一处理实现 ---- org.springframework.context.annotation.ConditionEvaluator#shouldSkip
+
+TODO: 比如 OnBeanCondition 有getOutcomes 与getMatchOutcome两个匹配方法, 这两个匹配方法各自的用途是?  
     
 ### 自动装配: @EnableAutoConfiguration
 自动装配流程:
