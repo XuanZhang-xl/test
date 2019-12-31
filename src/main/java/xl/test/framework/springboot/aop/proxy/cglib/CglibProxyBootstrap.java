@@ -32,7 +32,7 @@ public class CglibProxyBootstrap {
     @Before
     public void createEnhancer() {
         // 输出class文件
-        System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, "D:\\classes");
+        System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, "target/classes");
         // 创建增强器
         enhancer = new Enhancer();
         // 设置目标对象
@@ -94,7 +94,9 @@ public class CglibProxyBootstrap {
      * MethodInterceptor允许我们完全控制被拦截的方法，并且提供了手段对原方法进行调用，那为什么还会有其它的Callback接口实现呢？
      * 因为 MethodInterceptor的效率不高，它需要产生不同类型的字节码，并且需要生成一些运行时对象（InvocationHandler就不需要），所以Cglib提供了其它的接口供我们选择。
      *
-     * TODO: 这方法连被代理类都没有设置, 是怎么代理的? 难道自己创建的代理类?
+     * TODO: 这方法连被代理类实例都没有设置, 是怎么代理的? 难道自己创建的被代理类实例?
+     * 其实实例不是必须的, 因为代理类继承了被代理类, 调用代理类方法其实相当于调用callback中的方法, 如果要调用实例的方法,则需要在callback的方法中调用
+     * 被代理类实例可以没有, 也可以随时被替换
      */
     @Test
     public void methodInterceptor() {
@@ -108,8 +110,10 @@ public class CglibProxyBootstrap {
      */
     @Test
     public void invocationHandler() {
+        // 这里本来是不需要传一个被代理类实例的, 但是由于InvocationHandler的实现只调用了invoke()而没有调用super.原方法, 所以需要一个被代理类实例执行原方法逻辑
+        // 如果原方法逻辑不需要被执行, 则这里就可以不用传被代理类实例了
         UserService userService= new UserServiceForAopImpl();
-        InvocationHandler callback = new MyInvocationHandler(userService);
+        MyInvocationHandler callback = new MyInvocationHandler(userService);
         // 设置callback
         enhancer.setCallback(callback);
 
@@ -125,7 +129,7 @@ public class CglibProxyBootstrap {
         System.out.println();
 
         // 被代理类是InnerUserServiceImpl时打印
-        ((MyInvocationHandler) callback).setTarget(new InnerUserServiceImpl());
+        callback.setTarget(new InnerUserServiceImpl());
         proxyUserService.save(User.getRandomUser());
         System.out.println();
         proxyUserService.listUser();
