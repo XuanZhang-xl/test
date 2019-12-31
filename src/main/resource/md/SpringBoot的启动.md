@@ -430,10 +430,11 @@ TODO: 比如 OnBeanCondition 有getOutcomes 与getMatchOutcome两个匹配方法
 
 ## Aop
 
-JDK动态代理: 代理对象必须是某接口的实现, 因为它是通过创建 `extends Proxy implements 某接口`这样的类来实现的
-CGLIB动态代理:实现原理类似JDK动态代理, 但是它是 直接继承的被代理对象, 底层依靠ASM操作字节码, 性能比JDK高
+- JDK动态代理: 代理对象必须是某接口的实现, 因为它是通过创建 `extends Proxy implements 某接口`这样的类来实现的
+- CGLIB动态代理:实现原理类似JDK动态代理, 但是它是 直接继承的被代理对象, 底层依靠ASM操作字节码, 性能比JDK高
 
 从`@EnableAspectJAutoProxy`开始分析, 它引入了`AspectJAutoProxyRegistrar`
+
 `AspectJAutoProxyRegistrar`中有一行这样的代码:
 ```
 AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(registry);
