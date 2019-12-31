@@ -18,6 +18,8 @@ public class UserServiceForAopImpl implements UserService {
 
     @Override
     public List<User> listUser() {
-        return Arrays.asList(User.getRandomUser(), User.getRandomUser());
+        List<User> users = Arrays.asList(User.getRandomUser(), User.getRandomUser());
+        System.out.println(users);
+        return users;
     }
 }

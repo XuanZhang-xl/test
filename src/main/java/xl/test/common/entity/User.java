@@ -52,7 +52,7 @@ public class User {
     public static User getRandomUser() {
         Random random = new Random();
         User user = new User();
-        user.setSex(SEX[random.nextInt(1)]);
+        user.setSex(SEX[random.nextInt(SEX.length)]);
         user.setAge(random.nextInt(99) + 1);
         StringBuilder name = new StringBuilder();
         for (int i = 0; i < random.nextInt(7) + 1; i++) {
