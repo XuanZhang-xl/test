@@ -3,6 +3,7 @@ package xl.test.framework.springboot.aop.proxy.cglib;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.cglib.core.DebuggingClassWriter;
 import org.springframework.cglib.proxy.Callback;
 import org.springframework.cglib.proxy.Dispatcher;
 import org.springframework.cglib.proxy.Enhancer;
@@ -15,7 +16,6 @@ import xl.test.common.entity.User;
 import xl.test.common.service.UserService;
 import xl.test.framework.springboot.aop.proxy.UserServiceForAopImpl;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +31,8 @@ public class CglibProxyBootstrap {
 
     @Before
     public void createEnhancer() {
+        // 输出class文件
+        System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, "D:\\classes");
         // 创建增强器
         enhancer = new Enhancer();
         // 设置目标对象
