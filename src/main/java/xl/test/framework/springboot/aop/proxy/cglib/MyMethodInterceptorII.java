@@ -3,6 +3,8 @@ package xl.test.framework.springboot.aop.proxy.cglib;
 
 import org.springframework.cglib.proxy.MethodInterceptor;
 import org.springframework.cglib.proxy.MethodProxy;
+import xl.test.framework.springboot.aop.proxy.UserServiceForAopAlternativeImpl;
+import xl.test.framework.springboot.aop.proxy.UserServiceForAopImpl;
 
 import java.lang.reflect.Method;
 
@@ -25,6 +27,8 @@ public class MyMethodInterceptorII implements MethodInterceptor {
     public Object intercept(Object target, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
         System.out.println("MyMethodInterceptorII.invoke before");
         Object result = methodProxy.invokeSuper(target, args);
+        methodProxy.invoke(new UserServiceForAopAlternativeImpl(), args);
+        methodProxy.invoke(new UserServiceForAopImpl(), args);
         System.out.println("MyMethodInterceptorII.invoke after");
         return result;
     }

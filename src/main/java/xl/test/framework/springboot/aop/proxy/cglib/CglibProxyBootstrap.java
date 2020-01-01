@@ -20,6 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * callback是MethodInterceptor. 目标对象可以是实现类或接口
+ * callback是Dispatcher, 则可以是接口, 因为Dispatcher#loadObject返回代理类, 每次发生对原方法的调用时都会被调用并返回一个代理对象来调用原方法. 即Spring中的Prototype类型
+ * callback是LazyLoader, 则可以是接口, 因为LazyLoader#loadObject返回代理类, 此callback返回的代理类会被缓存起来. 即Spring中的Singleton类型
+ * callback是FixedValue，直接返回原方法调用想要的结果。也就是说不会调用原方法了
+ * callback是NoOp, 则啥也不干, 直接调用原方法
+ * callback是InvocationHandler 和jdk一模一样
+ *
  * @author XUAN
  * @since 2019/12/30
  */
@@ -27,7 +34,15 @@ public class CglibProxyBootstrap {
 
     private Enhancer enhancer = null;
 
+    /**
+     * 是否执行@After方法
+     */
     private boolean execAfter = true;
+
+    /**
+     *
+     */
+    private boolean setSuperclassAdvance = true;
 
     @Before
     public void createEnhancer() {
@@ -35,18 +50,12 @@ public class CglibProxyBootstrap {
         System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, "target/classes");
         // 创建增强器
         enhancer = new Enhancer();
-        // 设置目标对象
-        // callback是MethodInterceptor. 则必须是实现类, 否则报找不到方法
-        // callback是Dispatcher, 则可以是接口, 因为Dispatcher#loadObject返回代理类, 每次发生对原方法的调用时都会被调用并返回一个代理对象来调用原方法. 即Spring中的Prototype类型
-        // callback是LazyLoader, 则可以是接口, 因为LazyLoader#loadObject返回代理类, 此callback返回的代理类会被缓存起来. 即Spring中的Singleton类型
-        // callback是FixedValue，直接返回原方法调用想要的结果。也就是说不会调用原方法了
-        // callback是NoOp, 则啥也不干, 直接调用原方法
-        // callback是InvocationHandler
-        enhancer.setSuperclass(UserServiceForAopImpl.class);
     }
 
     @Test
     public void dispatcher() {
+        // 设置目标对象
+        enhancer.setSuperclass(UserServiceForAopImpl.class);
         // 设置callback
         enhancer.setCallback(new Dispatcher(){
             @Override
@@ -59,6 +68,8 @@ public class CglibProxyBootstrap {
 
     @Test
     public void lazyLoader() {
+        // 设置目标对象
+        enhancer.setSuperclass(UserServiceForAopImpl.class);
         enhancer.setCallback(new LazyLoader() {
             @Override
             public Object loadObject() throws Exception {
@@ -69,6 +80,8 @@ public class CglibProxyBootstrap {
 
     @Test
     public void fixedValue() {
+        // 设置目标对象
+        enhancer.setSuperclass(UserServiceForAopImpl.class);
         enhancer.setCallbacks(new Callback[]{new FixedValue() {
             @Override
             public Object loadObject() throws Exception {
@@ -100,6 +113,7 @@ public class CglibProxyBootstrap {
      */
     @Test
     public void methodInterceptor() {
+        enhancer.setSuperclass(UserService.class);
         enhancer.setCallbacks(new MethodInterceptor[]{new MyMethodInterceptorI(), new MyMethodInterceptorII()});
         enhancer.setCallbackFilter(new MyCallbackFilter());
     }
@@ -110,6 +124,8 @@ public class CglibProxyBootstrap {
      */
     @Test
     public void invocationHandler() {
+        // 设置目标对象
+        enhancer.setSuperclass(UserServiceForAopImpl.class);
         // 这里本来是不需要传一个被代理类实例的, 但是由于InvocationHandler的实现只调用了invoke()而没有调用super.原方法, 所以需要一个被代理类实例执行原方法逻辑
         // 如果原方法逻辑不需要被执行, 则这里就可以不用传被代理类实例了
         UserService userService= new UserServiceForAopImpl();
@@ -140,6 +156,8 @@ public class CglibProxyBootstrap {
 
     @Test
     public void noOp() {
+        // 设置目标对象
+        enhancer.setSuperclass(UserServiceForAopImpl.class);
         enhancer.setCallback(NoOp.INSTANCE);
     }
 
