@@ -2,6 +2,8 @@ package xl.test.framework.springboot.aop;
 
 import org.springframework.aop.config.AopConfigUtils;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import xl.test.common.service.UserService;
+import xl.test.framework.springboot.aop.proxy.UserServiceForAopImpl;
 
 /**
  * created by XUAN on 2019/12/30
@@ -16,9 +18,15 @@ public class AspectJBootstrap {
         applicationContext.register(MyAspectJDefinition.class);
         // 注册目标的bean
         applicationContext.register(AopTarget.class);
+        // 被@DeclareParents增强的类
+        applicationContext.register(UserServiceForAopImpl.class);
         applicationContext.refresh();
-        AopTarget target = applicationContext.getBean(AopTarget.class);
-        target.print();
+        TargetWrapper target = (TargetWrapper) applicationContext.getBean("aopTarget");
+
+        UserService userService = applicationContext.getBean(UserService.class);
+
+        System.out.println(((TargetWrapper)userService).getTarget());
+
         applicationContext.close();
     }
 }

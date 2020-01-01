@@ -3,16 +3,17 @@ package xl.test.framework.springboot.aop;
 /**
  * created by XUAN on 2019/12/30
  */
-public class AopTarget {
+public class AopTarget implements TargetWrapper {
 
-    private String name;
+    private String target = "给个默认值吧";
 
-    public String getName() {
-        return name;
+    @Override
+    public String getTarget() {
+        return target;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTarget(String target) {
+        this.target = target;
     }
 
     public void print() {
