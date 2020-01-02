@@ -36,6 +36,7 @@ public class AdviceChainBootstrap {
         advices.add(new BeforeAdvice());
         advices.add(new AroundAdvice());
         MethodInvocationImpl methodInvocation = new MethodInvocationImpl(targetClass, method, arguments, target, advices);
+        // 这就是 JdkDynamicAopProxy 和 CglibAopProxy 的 invocation.proceed();
         methodInvocation.proceed();
     }
 }
