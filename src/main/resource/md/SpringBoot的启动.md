@@ -962,7 +962,7 @@ public Object invoke(MethodInvocation mi) throws Throwable {
     ProxyMethodInvocation pmi = (ProxyMethodInvocation) mi;
     ProceedingJoinPoint pjp = lazyGetProceedingJoinPoint(pmi);
     JoinPointMatch jpm = getJoinPointMatch(pmi);
-    // 这里貌似啥也没有, 因为在这方法里组织调用增强方法参数的时候, 会把 MethodInvocation mi 传给增强方法, 也就是我们常见却不知道是啥的的 ProceedingJoinPoint
+    // 这里貌似啥也没有, 因为在这方法里组织调用增强方法参数的时候, 会把 MethodInvocation mi 传给增强方法, 在around增强器中的参数 ProceedingJoinPoint , 其实就是MethodInvocation的封装
     // 然后在增强方法里调用 ProceedingJoinPoint#proceed() 以继续调用下一个增强器
     // 终于知道我们常写的ProceedingJoinPoint#proceed()是在干嘛了!
     return invokeAdviceMethod(pjp, jpm, null, null);
