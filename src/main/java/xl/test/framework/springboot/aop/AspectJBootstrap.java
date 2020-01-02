@@ -16,17 +16,28 @@ public class AspectJBootstrap {
         AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(applicationContext);
         // 注册切入点的定义
         applicationContext.register(MyAspectJDefinition.class);
-        // 注册目标的bean
+        // 注册cglib代理bean
         applicationContext.register(AopTarget.class);
         // 被@DeclareParents增强的类
         applicationContext.register(UserServiceForAopImpl.class);
+        // cglib代理类
+        applicationContext.register(CglibTarget.class);
         applicationContext.refresh();
+
+        // jdk代理测试
         TargetWrapper target = (TargetWrapper) applicationContext.getBean("aopTarget");
+        System.out.println("target.getTarget() 返回: " + target.getTarget());
 
+        // cglib代理测试
+        CglibTarget cglibTarget = applicationContext.getBean(CglibTarget.class);
+        System.out.print("cglibTarget.print() 打印: ");
+        cglibTarget.print();
+
+        // @DeclareParents增强的类 测试
         UserService userService = applicationContext.getBean(UserService.class);
-
         System.out.println(((TargetWrapper)userService).getTarget());
 
+        // 关闭上下文
         applicationContext.close();
     }
 }

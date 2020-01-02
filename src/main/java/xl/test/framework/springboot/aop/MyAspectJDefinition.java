@@ -31,6 +31,13 @@ public class MyAspectJDefinition {
     public void point() {
     }
 
+    /**
+     * 匹配所有getTarget方法
+     */
+    @Pointcut("execution(* *.getTarget(..))")
+    public void getTarget() {
+    }
+
     @Before("point()")
     public void before(){
         System.out.println("before");
@@ -46,6 +53,24 @@ public class MyAspectJDefinition {
         System.out.println("around begin");
         Object proceed = p.proceed();
         System.out.println("around end");
+        return proceed;
+    }
+
+    @Before("getTarget()")
+    public void getTargetBefore(){
+        System.out.println("getTarget before");
+    }
+
+    @After("getTarget()")
+    public void getTargetAfter(){
+        System.out.println("getTargetafter");
+    }
+
+    @Around("getTarget()")
+    public Object getTargetAround(ProceedingJoinPoint p) throws Throwable {
+        System.out.println("getTarget around begin");
+        Object proceed = p.proceed();
+        System.out.println("getTarget around end");
         return proceed;
     }
 

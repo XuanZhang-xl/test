@@ -26,9 +26,10 @@ public class MyMethodInterceptorII implements MethodInterceptor {
     @Override
     public Object intercept(Object target, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
         System.out.println("MyMethodInterceptorII.invoke before");
-        Object result = methodProxy.invokeSuper(target, args);
-        methodProxy.invoke(new UserServiceForAopAlternativeImpl(), args);
-        methodProxy.invoke(new UserServiceForAopImpl(), args);
+        Object result = null;
+        //result = methodProxy.invokeSuper(target, args);
+        result = methodProxy.invoke(new UserServiceForAopAlternativeImpl(), args);
+        result = methodProxy.invoke(new UserServiceForAopImpl(), args);
         System.out.println("MyMethodInterceptorII.invoke after");
         return result;
     }

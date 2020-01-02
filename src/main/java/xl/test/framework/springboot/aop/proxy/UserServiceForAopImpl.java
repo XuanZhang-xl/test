@@ -2,6 +2,7 @@ package xl.test.framework.springboot.aop.proxy;
 
 import xl.test.common.entity.User;
 import xl.test.common.service.BaseUserService;
+import xl.test.common.service.UserService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
  * @author XUAN
  * @since 2019/12/30
  */
-public class UserServiceForAopImpl extends BaseUserService {
+public class UserServiceForAopImpl implements UserService {
     @Override
     public void save(User user) {
         System.out.println("saved user: " + user);
