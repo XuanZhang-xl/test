@@ -230,7 +230,7 @@
                 <directory>src/main/resource</directory>
                 <includes>
                     <include>**/*.xml</include>
-                    <include>application.properties</include>
+                    <include>*.properties</include>
                     <include>META-INF/**/*.*</include>
                 </includes>
             </resource>

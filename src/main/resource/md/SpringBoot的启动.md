@@ -296,6 +296,7 @@ BeanFactoryPostProcessor需要手动调用AbstractApplicationContext#addBeanFact
     - 加载到@Configuration后, 最终会调用 `ConfigurationClassParser#doProcessConfigurationClass`解析 `@PropertySources` `@ComponentScans` `@ComponentScan` `@ImportResource` `@Import` `@Component` 加载bean或配置文件的注解
     - `ConfigurationClassParser#doProcessConfigurationClass` 也会解析`org.springframework.context.annotation.ImportSelector`和`org.springframework.context.annotation.ImportBeanDefinitionRegistrar` 获得`ConfigurationClass`, 最终在`ConfigurationClassPostProcessor#processConfigBeanDefinitions`中将这些Configuration实例化并注册
 - `EventListenerMethodProcessor`获得所有EventListenerFactory实例, 通过这些实例获得`ApplicationListener`并将其加入ApplicationContext使其生效
+- `PropertySourcesPlaceholderConfigurer` 读取外部配置文件 
 
 ### 调用的先后顺序
 
@@ -616,6 +617,8 @@ protected List<Advisor> findAdvisorsThatCanApply(
 ```
 `AopUtils.findAdvisorsThatCanApply()`这个方法里先处理@DeclareParent增强, 再处理普通增强, 具体实现很复杂.
 
+可以看`Spring事务.md`, 里面有事务增强器匹配的完成逻辑分析.
+
 
 #### 创建代理
 ```
@@ -870,7 +873,7 @@ public Object invoke(Object proxy, Method method, Object[] args) throws Throwabl
         // 获得被代理类实例
         target = targetSource.getTarget();
         Class<?> targetClass = (target != null ? target.getClass() : null);
-        // 获得当前方法的拦截器链
+        // 获得当前方法的拦截器链, TODO: 这里还有一个通过Advisor获得MethodInterceptor的过程  DefaultAdvisorChainFactory
         List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
         if (chain.isEmpty()) {
             // 没拦截器, 直接反射调用切点方法
