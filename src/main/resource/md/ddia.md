@@ -118,7 +118,7 @@ MVCC实现:
 ## TODO
 -   如果TCP连接中断, 则事务也必须终止 p218
 -   谓词锁 p244
--   
+-   读事务 `SET TRANSACTION READ ONLY` 多条统计语句不会受到其他事务的影响
 
 
 
