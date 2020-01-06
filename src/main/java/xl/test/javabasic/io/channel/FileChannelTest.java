@@ -20,7 +20,7 @@ public class FileChannelTest {
 
     public static void main(String[] args){
         try {
-            fis = new FileInputStream(new File("C:\\Users\\zhangxuan9\\IdeaProjects\\test\\src\\main\\resource\\a.txt"));
+            fis = new FileInputStream(new File("./src\\main\\resource\\a.txt"));
             fc = fis.getChannel();
             fc.position(2);
             ByteBuffer byteBuffer = ByteBuffer.allocate(5);
@@ -56,7 +56,7 @@ public class FileChannelTest {
      */
     @Test
     public void testBatchWrite1() throws Exception {
-        FileOutputStream fos = new FileOutputStream(new File("C:\\Users\\zhangxuan9\\IdeaProjects\\test\\src\\main\\resource\\a.txt"));
+        FileOutputStream fos = new FileOutputStream(new File("./src\\main\\resource\\a.txt"));
         FileChannel fileChannel = fos.getChannel();
         ByteBuffer[] byteBuffers = {ByteBuffer.wrap("abcde".getBytes()), ByteBuffer.wrap("12345".getBytes())};
         fileChannel.write(ByteBuffer.wrap("qqqqq".getBytes()));
@@ -72,7 +72,7 @@ public class FileChannelTest {
      */
     @Test
     public void testBatchRead1() throws Exception {
-        FileInputStream fis = new FileInputStream(new File("C:\\Users\\zhangxuan9\\IdeaProjects\\test\\src\\main\\resource\\b.txt"));
+        FileInputStream fis = new FileInputStream(new File("./src\\main\\resource\\b.txt"));
         FileChannel channel = fis.getChannel();
         ByteBuffer[] byteBuffers = {ByteBuffer.wrap("abcde".getBytes()), ByteBuffer.wrap("12345".getBytes())};
 

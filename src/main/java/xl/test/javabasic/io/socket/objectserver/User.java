@@ -1,4 +1,4 @@
-package xl.test.javabasic.io.objectserver;
+package xl.test.javabasic.io.socket.objectserver;
 
 import java.io.Serializable;
 
