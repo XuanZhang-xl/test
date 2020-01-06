@@ -1,5 +1,14 @@
 # SpringBoot2.1.2启动流程
 
+Springboot在大多数时候是使用`main()`函数启动(当然也可以使用`SpringBootServletInitializer`), 那么先来看`main()`函数:
+```
+public static void main(String[] args) {
+    SpringApplication.run(Object.class);
+}
+```
+就一行代码, 然而关于SpringBoot的一切都是从这一行代码开始的, 其中凝聚了无数人的心血, 在此先向这些先行者表示敬意
+
+
 ## 启动前
 
 当SpringBoot项目使用`java -jar`方式部署的时候, 并不是直接去启动Application中的main方法.
