@@ -10,8 +10,8 @@ import java.nio.channels.FileChannel;
 public class RandomAccessTest {
 
     public static void main(String[] args) throws IOException {
-        try (RandomAccessFile file1 = new RandomAccessFile("C:\\Users\\zhangxuan9\\IdeaProjects\\test\\src\\main\\resource\\a.txt", "rw");
-             RandomAccessFile file2 = new RandomAccessFile("C:\\Users\\zhangxuan9\\IdeaProjects\\test\\src\\main\\resource\\b.txt", "rw");
+        try (RandomAccessFile file1 = new RandomAccessFile("./src\\main\\resource\\a.txt", "rw");
+             RandomAccessFile file2 = new RandomAccessFile("./src\\main\\resource\\b.txt", "rw");
 
 
              FileChannel channel1 = file1.getChannel();

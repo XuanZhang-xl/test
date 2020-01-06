@@ -13,7 +13,7 @@ public class FileLockTest {
 
     @Test
     public void asynClose() throws IOException, InterruptedException {
-        FileOutputStream fos = new FileOutputStream("C:\\Users\\zhangxuan9\\IdeaProjects\\test\\src\\main\\resource\\a.txt");
+        FileOutputStream fos = new FileOutputStream("./test\\src\\main\\resource\\a.txt");
         final FileChannel channel = fos.getChannel();
         Thread a = new Thread() {
             @Override
