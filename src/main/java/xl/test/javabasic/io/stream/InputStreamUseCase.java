@@ -5,10 +5,13 @@ import org.junit.Test;
 import xl.test.common.utils.GetCurrentPath;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 /**
  * 输入流用例
@@ -48,6 +51,22 @@ public class InputStreamUseCase implements GetCurrentPath {
         DataInputStream dis = new DataInputStream(bin);
         System.out.println(dis.readInt());
 
+    }
+
+    @Test
+    public void generateIpFilter() throws Exception {
+        String fileName = "C:\\Users\\MSI-PC\\Desktop\\blanlistip.txt";
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
+        String line = null;
+        StringBuilder sb = new StringBuilder();
+        while ((line = reader.readLine()) != null) {
+            sb.append("firewall-cmd --permanent --add-rich-rule='rule family=\"ipv4\" source address=\"");
+            sb.append(line.trim());
+            sb.append("\" drop'");
+            sb.append("\n");
+        }
+        FileOutputStream fos = new FileOutputStream(fileName);
+        fos.write(sb.toString().getBytes());
     }
 
 }
