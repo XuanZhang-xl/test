@@ -14,6 +14,8 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
+ * 最简单的http服务器, 固定传送一个文件内容
+ *
  * created by XUAN on 2020/1/7
  */
 public class SimpleHttpServer implements MyServer {
@@ -52,7 +54,7 @@ public class SimpleHttpServer implements MyServer {
             while (true) {
                 try {
                     Socket socket = serverSocket.accept();
-                    System.out.println(socket);
+                    System.out.println("accept: " + socket);
                     // 新线程交给线程池处理
                     pool.submit(new HttpHandler(socket));
                 } catch (IOException e) {
@@ -77,18 +79,21 @@ public class SimpleHttpServer implements MyServer {
                 while (true) {
                     int c = bis.read();
                     // 只读取第一行
+                    // 如果没有\r\n 且传的不是文件, 则在这里卡死, 永远等待下一个字符
                     if (c == '\r' || c== '\n' || c == -1) {
                         break;
                     }
                     request.append((char)c);
                 }
 
+                System.out.println("received: " + request);
                 // HTTP/1.0或之后的版本, 则发送一个MIME首部
                 if (request.toString().indexOf("HTTP/") != -1) {
                     bos.write(header);
                 }
                 bos.write(content);
                 bos.flush();
+                System.out.println("HttpHandler response");
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {

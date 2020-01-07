@@ -171,14 +171,18 @@ public class SocketUseCase {
     public void getDataFromSocket() throws IOException {
         Socket socket = null;
         try {
-            socket = new Socket("www.baidu.com", 80);
-
+            //socket = new Socket("www.baidu.com", 80);
+            socket = new Socket("127.0.0.1", 80);
+            socket.setSoTimeout(50000);
             //BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             //String data = null;
             //while ((data = br.readLine()) != null) {
             //    System.out.println(data);
             //}
 
+            OutputStreamWriter osw = new OutputStreamWriter(socket.getOutputStream());
+            osw.write("HTTP/1.1\r\n");
+            osw.flush();
             InputStreamReader reader = new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8);
             int c;
             StringBuilder sb = new StringBuilder();
@@ -195,6 +199,30 @@ public class SocketUseCase {
         }
     }
 
+    @Test
+    public void getHttpClient() throws IOException {
+        Socket socket = null;
+        try {
+            socket = new Socket("127.0.0.1", 80);
+            socket.setSoTimeout(50000);
 
+            OutputStreamWriter osw = new OutputStreamWriter(socket.getOutputStream());
+            osw.write("GET application.properties HTTP/1.1\r\n");
+            osw.flush();
+            InputStreamReader reader = new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8);
+            int c;
+            StringBuilder sb = new StringBuilder();
+            while ((c = reader.read()) != -1) {
+                sb.append((char)c);
+            }
+            System.out.println(sb);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (socket != null) {
+                socket.close();
+            }
+        }
+    }
 
 }
