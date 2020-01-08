@@ -199,6 +199,10 @@ public class SocketUseCase {
         }
     }
 
+    /**
+     * 测试 GetHttpServer
+     * @throws IOException
+     */
     @Test
     public void getHttpClient() throws IOException {
         Socket socket = null;
@@ -207,7 +211,8 @@ public class SocketUseCase {
             socket.setSoTimeout(50000);
 
             OutputStreamWriter osw = new OutputStreamWriter(socket.getOutputStream());
-            osw.write("GET application.properties HTTP/1.1\r\n");
+            // 读取结束条件为空字符串, 所以必须在家\r\n
+            osw.write("GET /b.txt HTTP/1.1\r\n\r\n");
             osw.flush();
             InputStreamReader reader = new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8);
             int c;
