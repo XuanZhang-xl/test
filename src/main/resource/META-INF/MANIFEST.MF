@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
 Premain-Class: xl.test.framework.springboot.aop.staticproxy.PerfMonAgent
-Main-Class: xl.test.javabasic.io.socket.objectserver.ObjectServer
+Main-Class: xl.test.javabasic.io.bio.objectserver.ObjectServer
 Can-Redefine-Classes: true
