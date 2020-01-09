@@ -36,14 +36,14 @@ public class PlainNioServer {
         InetSocketAddress address = new InetSocketAddress(8081);
         socket.bind(address);
 
-        // 选选择器, 每次open()都返回新选择器
+        // 选择器, 每次open()都返回新选择器
         Selector selector = Selector.open();
         // 向这个selector中注册服务器管道, 服务器通道只关心一件事, 就是是否有新的连接, 如果有, 则注册这些连接
         serverChannel.register(selector, SelectionKey.OP_ACCEPT);
         final ByteBuffer msg = ByteBuffer.wrap("Hi!\r\n".getBytes());
 
         while (true) {
-            // 这段代码貌似会阻塞
+            // select()会阻塞
             int select = selector.select();
             Set<SelectionKey> selectionKeys = selector.selectedKeys();
             Iterator<SelectionKey> iterator = selectionKeys.iterator();
