@@ -1,13 +1,432 @@
 # Tomcat解析
 
-对Tomcat的总结是为了更好得理解`SpringMVC`, 故不会对Tomcat进行全局分析, 将专注于以下四个点:
+本文对Tomcat的总结是为了更好得理解`SpringMVC`与`Java NIO`, 故不会对Tomcat进行全局分析, 将专注于以下几个点:
 - Tomcat如何利用Java NIO
 - Tomcat对Servlet的实现
 - Tomcat的拦截器/过滤器, 设计模式
 - SpringBoot对Tomcat的整合
 
+先上一张Tomcat启动时序图
 
-## 1. NioEndPoint
+![](../img/tomcat/tomcatinit.png)
+
+## 1. Tomcat的拦截器/过滤器
+
+
+## 2. SpringBoot与Tomcat的整合
+
+SpringBoot可以启动很多服务器类型, 但是为了方便, 后文都默认启动的是Tomcat.
+
+SpringBoot与Tomcat的整合最重要的就是要使Tomcat接收的请求, 进入`DispatcherServlet`交给`SpringMVC`处理, 因此, 从`DispatcherServlet`入手
+
+```
+// org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration
+@Bean(name = DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)
+public DispatcherServlet dispatcherServlet() {
+    DispatcherServlet dispatcherServlet = new DispatcherServlet();
+    dispatcherServlet.setDispatchOptionsRequest(this.webMvcProperties.isDispatchOptionsRequest());
+    dispatcherServlet.setDispatchTraceRequest(this.webMvcProperties.isDispatchTraceRequest());
+    dispatcherServlet.setThrowExceptionIfNoHandlerFound(this.webMvcProperties.isThrowExceptionIfNoHandlerFound());
+    return dispatcherServlet;
+}
+
+@Bean(name = DEFAULT_DISPATCHER_SERVLET_REGISTRATION_BEAN_NAME)
+@ConditionalOnBean(value = DispatcherServlet.class, name = DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)
+public ServletRegistrationBean<DispatcherServlet> dispatcherServletRegistration(DispatcherServlet dispatcherServlet) {
+    ServletRegistrationBean<DispatcherServlet> registration = new ServletRegistrationBean<>(dispatcherServlet, this.serverProperties.getServlet().getServletMapping());
+    registration.setName(DEFAULT_DISPATCHER_SERVLET_BEAN_NAME);
+    registration.setLoadOnStartup(this.webMvcProperties.getServlet().getLoadOnStartup());
+    if (this.multipartConfig != null) {
+        registration.setMultipartConfig(this.multipartConfig);
+    }
+    return registration;
+}
+```
+
+自动装配(autoconfigure)包中, 自动注册了`DispatcherServlet`及`ServletRegistrationBean`, 并且把`DispatcherServlet`放入了`ServletRegistrationBean`.
+
+而`ServletRegistrationBean`是`ServletContextInitializer`的实现类,  因此启动时会调用其`onStartup()`方法, 那么就产生了几个问题:
+
+- `ServletRegistrationBean#onStartup()`是何时调用的
+- `onStartup()`里是如何注册`DispatcherServlet`
+- `ServletRegistrationBean`必然有注册才能调用, 那么是何时注册的
+- 这逻辑的入口在哪里
+
+### 2.1. AbstractApplicationContext#onRefresh()
+
+一切从我们熟悉的`AbstractApplicationContext#onRefresh()`方法说起, 当应用类型是Web时, SpringBoot默认帮我们实例化的`ApplicationContext`是`AnnotationConfigServletWebServerApplicationContext`, 其是`ServletWebServerApplicationContext`的子类.
+ 
+而`ServletWebServerApplicationContext`重写了`onRefresh()`方法, 其中启动了Tomcat:
+```
+protected void onRefresh() {
+    super.onRefresh();
+    try {
+        createWebServer();
+    } catch (Throwable ex) {
+        throw new ApplicationContextException("Unable to start web server", ex);
+    }
+}
+private void createWebServer() {
+    WebServer webServer = this.webServer;
+    ServletContext servletContext = getServletContext();
+    if (webServer == null && servletContext == null) {
+        ServletWebServerFactory factory = getWebServerFactory();
+        // 重点, 这里初始化并启动了Tomecat
+        // 这个getSelfInitializer()非常重要
+        this.webServer = factory.getWebServer(getSelfInitializer());
+    } else if (servletContext != null) {
+        try {
+            getSelfInitializer().onStartup(servletContext);
+        } catch (ServletException ex) {
+            throw new ApplicationContextException("Cannot initialize servlet context", ex);
+        }
+    }
+    initPropertySources();
+}
+// 这里返回了一个内部类ServletContextInitializer, 其onStartup()方法会直接调用下面的selfInitialize(), 
+private org.springframework.boot.web.servlet.ServletContextInitializer getSelfInitializer() {
+    return this::selfInitialize;
+}
+private void selfInitialize(ServletContext servletContext) throws ServletException {
+    prepareWebApplicationContext(servletContext);
+    ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+    ExistingWebApplicationScopes existingScopes = new ExistingWebApplicationScopes(beanFactory);
+    WebApplicationContextUtils.registerWebApplicationScopes(beanFactory, getServletContext());
+    existingScopes.restore();
+    WebApplicationContextUtils.registerEnvironmentBeans(beanFactory, getServletContext());
+    // 拿到已注册的ServletContextInitializer, 调用onStartup(), 而ServletRegistrationBean就是在这里被调用的
+    for (ServletContextInitializer beans : getServletContextInitializerBeans()) {
+        beans.onStartup(servletContext);
+    }
+}
+```
+
+这里是传入了一个内部`ServletContextInitializer`, 我们先分析`factory.getWebServer()`, 后面会调用其方法的时候在分析`selfInitialize()`
+
+```
+public WebServer getWebServer(ServletContextInitializer... initializers) {
+    // 创建了Tomcat服务器
+    Tomcat tomcat = new Tomcat();
+    // 下面代码创建了Tomcat的连接器, 服务等等组件
+    File baseDir = (this.baseDirectory != null ? this.baseDirectory : createTempDir("tomcat"));
+    tomcat.setBaseDir(baseDir.getAbsolutePath());
+    Connector connector = new Connector(this.protocol);
+    tomcat.getService().addConnector(connector);
+    customizeConnector(connector);
+    tomcat.setConnector(connector);
+    tomcat.getHost().setAutoDeploy(false);
+    configureEngine(tomcat.getEngine());
+    for (Connector additionalConnector : this.additionalTomcatConnectors) {
+        tomcat.getService().addConnector(additionalConnector);
+    }
+    // 重点: 实例化了Context并对ServletContextInitializer的处理
+    prepareContext(tomcat.getHost(), initializers);
+    // 把Tomcat服务器封装为TomcatWebServer返回
+    return getTomcatWebServer(tomcat);
+}
+protected void prepareContext(Host host, ServletContextInitializer[] initializers) {
+    File documentRoot = getValidDocumentRoot();
+    // 实际实例化的是 TomcatEmbeddedContext, 其继承了 StandardContext
+    TomcatEmbeddedContext context = new TomcatEmbeddedContext();
+    // 下面都是对StandardContext的初始化, 就不分析了
+    if (documentRoot != null) {
+        context.setResources(new LoaderHidingResourceRoot(context));
+    }
+    context.setName(getContextPath());
+    context.setDisplayName(getDisplayName());
+    context.setPath(getContextPath());
+    File docBase = (documentRoot != null ? documentRoot
+            : createTempDir("tomcat-docbase"));
+    context.setDocBase(docBase.getAbsolutePath());
+    context.addLifecycleListener(new FixContextListener());
+    context.setParentClassLoader(
+            this.resourceLoader != null ? this.resourceLoader.getClassLoader()
+                    : ClassUtils.getDefaultClassLoader());
+    resetDefaultLocaleMapping(context);
+    addLocaleMappings(context);
+    context.setUseRelativeRedirects(false);
+    configureTldSkipPatterns(context);
+    WebappLoader loader = new WebappLoader(context.getParentClassLoader());
+    loader.setLoaderClass(TomcatEmbeddedWebappClassLoader.class.getName());
+    loader.setDelegate(true);
+    context.setLoader(loader);
+    if (isRegisterDefaultServlet()) {
+        addDefaultServlet(context);
+    }
+    if (shouldRegisterJspServlet()) {
+        addJspServlet(context);
+        addJasperInitializer(context);
+    }
+    context.addLifecycleListener(new StaticResourceConfigurer(context));
+    ServletContextInitializer[] initializersToUse = mergeInitializers(initializers);
+    // 将StandardContext放在 Host下
+    host.addChild(context);
+    // 重点: StandardContext 封装ServletContextInitializer
+    configureContext(context, initializersToUse);
+    postProcessContext(context);
+}
+protected void configureContext(Context context,
+        ServletContextInitializer[] initializers) {
+    // 将 ServletContextInitializer 封装进 TomcatStarter
+    // 其实这个TomcatStarter 就是为了集中处理 ServletContextInitializer
+    TomcatStarter starter = new TomcatStarter(initializers);
+    if (context instanceof TomcatEmbeddedContext) {
+        // Should be true
+        ((TomcatEmbeddedContext) context).setStarter(starter);
+    }
+    // 重点: 将 TomcatStarter 放入 StandardContext
+    context.addServletContainerInitializer(starter, NO_CLASSES);
+    // 继续初始化 StandardContext , 就不分析了
+    for (LifecycleListener lifecycleListener : this.contextLifecycleListeners) {
+        context.addLifecycleListener(lifecycleListener);
+    }
+    for (Valve valve : this.contextValves) {
+        context.getPipeline().addValve(valve);
+    }
+    for (ErrorPage errorPage : getErrorPages()) {
+        new TomcatErrorPage(errorPage).addToContext(context);
+    }
+    for (MimeMappings.Mapping mapping : getMimeMappings()) {
+        context.addMimeMapping(mapping.getExtension(), mapping.getMimeType());
+    }
+    configureSession(context);
+    // 对StandardContext进行自定义操作
+    for (TomcatContextCustomizer customizer : this.tomcatContextCustomizers) {
+        customizer.customize(context);
+    }
+}
+
+private Map<ServletContainerInitializer,Set<Class<?>>> initializers = new LinkedHashMap<>();
+public void addServletContainerInitializer( ServletContainerInitializer sci, Set<Class<?>> classes) {
+    // 直接放入 initializers 成员变量中
+    initializers.put(sci, classes);
+}
+```
+
+到现在层次有点多, 但是我们只需要知道`ServletContainerInitializer`实际上是放在了`StandardContext`的`initializers`成员变量中
+```
+    private Map<ServletContainerInitializer,Set<Class<?>>> initializers = new LinkedHashMap<>();
+```
+而其中只有一个值, 就是`TomcatStarter`, 而`TomcatStarter`自身也实现了`ServletContainerInitializer`, 并且本身就是一个`ServletContainerInitializer`集合
+
+我们继续收集完`ServletContainerInitializer`, 我们看看其是怎么执行`onStartUp()`方法的
+
+```
+// org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getTomcatWebServer
+protected TomcatWebServer getTomcatWebServer(Tomcat tomcat) {
+    // 封装Tomcat服务器的方法, 我们看看其构造方法
+    return new TomcatWebServer(tomcat, getPort() >= 0);
+}
+public TomcatWebServer(Tomcat tomcat, boolean autoStart) {
+    Assert.notNull(tomcat, "Tomcat Server must not be null");
+    this.tomcat = tomcat;
+    this.autoStart = autoStart;
+    // 重点, 初始化
+    initialize();
+}
+private void initialize() throws WebServerException {
+    synchronized (this.monitor) {
+        try {
+            addInstanceIdToEngineName();
+            Context context = findContext();
+            context.addLifecycleListener((event) -> {
+                if (context.equals(event.getSource()) && Lifecycle.START_EVENT.equals(event.getType())) {
+                    removeServiceConnectors();
+                }
+            });
+            // Start the server to trigger initialization listeners
+            // tomcat启动方法, 会引发一连串的start()方法的调用
+            this.tomcat.start();
+
+            // We can re-throw failure exception directly in the main thread
+            rethrowDeferredStartupExceptions();
+            try {
+                ContextBindings.bindClassLoader(context, context.getNamingToken(), getClass().getClassLoader());
+            } catch (NamingException ex) {
+            }
+            startDaemonAwaitThread();
+        } catch (Exception ex) {
+            stopSilently();
+            throw new WebServerException("Unable to start embedded Tomcat", ex);
+        }
+    }
+}
+```
+我们看到`TomcatWebServer#initialize()`中调用了`Tomcat#start()`方法启动Tomcat服务, 根据上面的`Tomcat`时序图, 可以看到其最终会调用`StandardContext#start()`, 所以我们直接跳到此方法.
+
+```
+// StandardContext#startInternal() 长达近300行代码, 我们只看我们关心的部分:
+protected synchronized void startInternal() throws LifecycleException {
+    // 省略代码
+    // Call ServletContainerInitializers
+    for (Map.Entry<ServletContainerInitializer, Set<Class<?>>> entry :
+        initializers.entrySet()) {
+        try {
+            // 这里的key就是 TomcatStarter
+            entry.getKey().onStartup(entry.getValue(), getServletContext());
+        } catch (ServletException e) {
+            log.error(sm.getString("standardContext.sciFail"), e);
+            ok = false;
+            break;
+        }
+    }
+    // 省略代码
+}
+// TomcatStarter.onStartup()
+public void onStartup(Set<Class<?>> classes, ServletContext servletContext) throws ServletException {
+    try {
+        for (ServletContextInitializer initializer : this.initializers) {
+            initializer.onStartup(servletContext);
+        }
+    } catch (Exception ex) {
+        this.startUpException = ex;
+        logger.error("Error starting Tomcat context. Exception: " + ex.getClass().getName() + ". Message: " + ex.getMessage());
+    }
+}
+// 终于, 在这里执行了ServletWebServerApplicationContext的内部类 ServletContainerInitializer, 我再贴一遍代码
+private void selfInitialize(ServletContext servletContext) throws ServletException {
+    prepareWebApplicationContext(servletContext);
+    ConfigurableListableBeanFactory beanFactory = getBeanFactory();
+    ExistingWebApplicationScopes existingScopes = new ExistingWebApplicationScopes(beanFactory);
+    WebApplicationContextUtils.registerWebApplicationScopes(beanFactory, getServletContext());
+    existingScopes.restore();
+    WebApplicationContextUtils.registerEnvironmentBeans(beanFactory, getServletContext());
+    // 重点: 获得BeanFactory中的ServletContextInitializer并执行onStartup()
+    for (ServletContextInitializer beans : getServletContextInitializerBeans()) {
+        beans.onStartup(servletContext);
+    }
+}
+protected Collection<ServletContextInitializer> getServletContextInitializerBeans() {
+    return new ServletContextInitializerBeans(getBeanFactory());
+}
+```
+
+注意: ServletContextInitializerBeans是一个 Collection, 所以可以直接使用迭代器迭代ServletContainerInitializer, 所以我们看其构造方法
+```
+// key是 ServletContextInitializer.class及其子类
+private final MultiValueMap<Class<?>, ServletContextInitializer> initializers;
+// 最终迭代这个变量
+private List<ServletContextInitializer> sortedList;
+public ServletContextInitializerBeans(ListableBeanFactory beanFactory) {
+    this.initializers = new LinkedMultiValueMap<>();
+    // 获得ServletContextInitializer
+    addServletContextInitializerBeans(beanFactory);
+    addAdaptableBeans(beanFactory);
+    List<ServletContextInitializer> sortedInitializers = new ArrayList<>();
+    this.initializers.values().forEach((contextInitializers) -> {
+        AnnotationAwareOrderComparator.sort(contextInitializers);
+        sortedInitializers.addAll(contextInitializers);
+    });
+    // 将ServletContextInitializer赋值给sortedList, 等待遍历
+    this.sortedList = Collections.unmodifiableList(sortedInitializers);
+}
+```
+
+至此, SpringBoot帮我们注册的`ServletRegistrationBean`的`onStartup()`方法终于被调用
+
+### 2.2. ServletRegistrationBean#onStartup()
+
+剩下的就相对比较简单了, 就是往 里加Servlet就可以了
+
+```
+public final void onStartup(ServletContext servletContext) throws ServletException {
+    // 实际值为 "servlet dispatcherServlet"
+    String description = getDescription();
+    if (!isEnabled()) {
+        logger.info(StringUtils.capitalize(description) + " was not registered (disabled)");
+        return;
+    }
+    // 注册..
+    register(description, servletContext);
+}
+protected final void register(String description, ServletContext servletContext) {
+    // 重点 
+    D registration = addRegistration(description, servletContext);
+    if (registration == null) {
+        logger.info(StringUtils.capitalize(description) + " was not registered " + "(possibly already registered?)");
+        return;
+    }
+    configure(registration);
+}
+protected ServletRegistration.Dynamic addRegistration(String description, ServletContext servletContext) {
+    // 实际值为 dispatcherServlet
+    String name = getServletName();
+    // Servlet dispatcherServlet mapped to [/]
+    logger.info("Servlet " + name + " mapped to " + this.urlMappings);
+    // 将DispatcherServlet放入ServletContext
+    return servletContext.addServlet(name, this.servlet);
+}
+```
+
+加入`ServletContext`还有些逻辑:
+```
+private ServletRegistration.Dynamic addServlet(String servletName, String servletClass, Servlet servlet, Map<String,String> initParams) throws IllegalStateException {
+
+    if (servletName == null || servletName.equals("")) {
+        throw new IllegalArgumentException(sm.getString("applicationContext.invalidServletName", servletName));
+    }
+
+    if (!context.getState().equals(LifecycleState.STARTING_PREP)) {
+        //TODO Spec breaking enhancement to ignore this restriction
+        throw new IllegalStateException(sm.getString("applicationContext.addServlet.ise", getContextPath()));
+    }
+
+    // 实现类为 StandardWrapper, 缓存机制
+    Wrapper wrapper = (Wrapper) context.findChild(servletName);
+    if (wrapper == null) {
+        wrapper = context.createWrapper();
+        wrapper.setName(servletName);
+        context.addChild(wrapper);
+    } else {
+        if (wrapper.getName() != null && wrapper.getServletClass() != null) {
+            if (wrapper.isOverridable()) {
+                wrapper.setOverridable(false);
+            } else {
+                return null;
+            }
+        }
+    }
+
+    ServletSecurity annotation = null;
+    if (servlet == null) {
+        wrapper.setServletClass(servletClass);
+        Class<?> clazz = Introspection.loadClass(context, servletClass);
+        if (clazz != null) {
+            annotation = clazz.getAnnotation(ServletSecurity.class);
+        }
+    } else {
+        wrapper.setServletClass(servlet.getClass().getName());
+        wrapper.setServlet(servlet);
+        if (context.wasCreatedDynamicServlet(servlet)) {
+            annotation = servlet.getClass().getAnnotation(ServletSecurity.class);
+        }
+    }
+
+    if (initParams != null) {
+        for (Map.Entry<String, String> initParam: initParams.entrySet()) {
+            wrapper.addInitParameter(initParam.getKey(), initParam.getValue());
+        }
+    }
+
+    ServletRegistration.Dynamic registration = new ApplicationServletRegistration(wrapper, context);
+    if (annotation != null) {
+        registration.setServletSecurity(new ServletSecurityElement(annotation));
+    }
+    return registration;
+}
+```
+
+
+
+从
+    org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext#finishRefresh()
+到
+    org.apache.catalina.core.StandardWrapper#load()
+
+
+至此, `Tomcat`启动时候的我想关注的点都已经探索完毕, 那么还剩余的就是Tomcat运行时逻辑, 也就是Tomcat对Java NIO的处理
+
+## 3. NioEndPoint
 `NioEndPoint`是Tomcat对使用Java NIO来接受请求的实现类
 
 要理解tomcat的nio最主要就是对NioEndpoint的理解。它一共包含`LimitLatch`、`Acceptor`、`Poller`、`SocketProcessor`、`Executor`5个部分。
@@ -26,7 +445,7 @@ Tomcat NIO线程模型
 
 下面通过源码来深入理解上图中的内容
 
-### 1.1. NioEndPoint源码解读
+### 3.1. NioEndPoint源码解读
 
 从`start()`方法开始
 
@@ -542,14 +961,101 @@ protected void doRun() {
 }
 ```
 
+再继续就是`Http11NioProtocol`获得协议, 方法, header 等逻辑, 我们不关心这些逻辑, 直接跳到`Servlet`相关的代码
 
-## 2. Servlet
+## 4. DispatcherServlet
+
+首先, 提出疑问: 请求是如何进入`DispatcherServlet`
+
+TODO
+
+查看`Tomcat`启动就会调用的load()方法: 在`StandardWrapper`中, 似乎初始化了Servlet
+```
+// org.apache.catalina.core.StandardWrapper#load()
+public synchronized void load() throws ServletException {
+    // 加载Servlet
+    instance = loadServlet();
+    // 初始化
+    if (!instanceInitialized) {
+        initServlet(instance);
+    }
+    if (isJspServlet) {
+        // 不重要, 省略
+    }
+}
+public synchronized Servlet loadServlet() throws ServletException {
+    // 缓存中取
+    if (!singleThreadModel && (instance != null))
+        return instance;
+    // 这看起来是日志相关
+    PrintStream out = System.out;
+    if (swallowOutput) {
+        SystemLogHandler.startCapture();
+    }
+    Servlet servlet;
+    try {
+        long t1=System.currentTimeMillis();
+        // 默认 org.apache.catalina.servlets.DefaultServlet. 这里不可能是null
+        if (servletClass == null) {
+            unavailable(null);
+            throw new ServletException (sm.getString("standardWrapper.notClass", getName()));
+        }
+        InstanceManager instanceManager = ((StandardContext)getParent()).getInstanceManager();
+        try {
+            // 创建 DefaultServlet
+            servlet = (Servlet) instanceManager.newInstance(servletClass);
+        } catch (ClassCastException e) {
+            unavailable(null);
+            throw new ServletException(sm.getString("standardWrapper.notServlet", servletClass), e);
+        } catch (Throwable e) {
+            e = ExceptionUtils.unwrapInvocationTargetException(e);
+            ExceptionUtils.handleThrowable(e);
+            unavailable(null);
+            // Added extra log statement for Bugzilla 36630: http://bz.apache.org/bugzilla/show_bug.cgi?id=36630
+            log.debug(sm.getString("standardWrapper.instantiate", servletClass), e);
+            throw new ServletException(sm.getString("standardWrapper.instantiate", servletClass), e);
+        }
+        if (multipartConfigElement == null) {
+            MultipartConfig annotation = servlet.getClass().getAnnotation(MultipartConfig.class);
+            if (annotation != null) {
+                multipartConfigElement = new MultipartConfigElement(annotation);
+            }
+        }
+        // Special handling for ContainerServlet instances
+        // Note: The InstanceManager checks if the application is permitted to load ContainerServlets
+        // DefaultServlet 不是 ContainerServlet, 不会被包装
+        if (servlet instanceof ContainerServlet) {
+            ((ContainerServlet) servlet).setWrapper(this);
+        }
+        classLoadTime=(int) (System.currentTimeMillis() -t1);
+        // DefaultServlet 不是 SingleThreadModel
+        if (servlet instanceof SingleThreadModel) {
+            if (instancePool == null) {
+                instancePool = new Stack<>();
+            }
+            singleThreadModel = true;
+        }
+        // 初始化
+        initServlet(servlet);
+        fireContainerEvent("load", this);
+    } finally {
+        if (swallowOutput) {
+            String log = SystemLogHandler.stopCapture();
+            if (log != null && log.length() > 0) {
+                if (getServletContext() != null) {
+                    getServletContext().log(log);
+                } else {
+                    out.println(log);
+                }
+            }
+        }
+    }
+    return servlet;
+}
+```
+然而很遗憾, 这里只初始化了`DefaultServlet`, 并没有我们期待的`DispatcherServlet`, 
 
 
-## 3. Tomcat的拦截器/过滤器
-
-
-## 4. SpringBoot与Tomcat的整合
 
 ## 5. 附录
     https://www.jianshu.com/p/76ff17bc6dea
