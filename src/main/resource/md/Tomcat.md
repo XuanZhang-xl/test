@@ -20,7 +20,9 @@
 
 在从socket中读数据和往socket中写数据的过程，并没有像典型的非阻塞的NIO的那样，注册OP_READ或OP_WRITE事件到主Selector，而是直接通过socket完成读写，这时是阻塞完成的，但是在timeout控制上，使用了NIO的Selector机制，但是这个Selector并不是Poller线程维护的主Selector，而是BlockPoller线程中维护的Selector，称之为辅Selector。
 
-![](../img/tomcat/nioendpoint.png)
+Tomcat NIO线程模型
+
+![](../img/tomcat/tomcatniomodel.jpg)
 
 下面通过源码来深入理解上图中的内容
 
@@ -144,6 +146,7 @@ protected LimitLatch initializeConnectionLatch() {
     return connectionLimitLatch;
 }
 ```
+到这里，我们启动了工作线程池、 poller 线程组、acceptor 线程组。同时，工作线程池初始就已经启动了 10 个线程。
 
 启动`Acceptor`线程后, 重点看下如何接受新请求
 ```
@@ -160,16 +163,12 @@ public void run() {
     int errorDelay = 0;
     // Loop until we receive a shutdown command
     while (running) {
-        // Loop if endpoint is paused
+        // 如果 endpoint 处于 pause 状态，这边 Acceptor 用一个 while 循环将自己也挂起
         while (paused && running) {
             state = AcceptorState.PAUSED;
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
+            Thread.sleep(50);
         }
-
+        // endpoint 结束，Acceptor 也结束
         if (!running) {
             break;
         }
@@ -180,7 +179,7 @@ public void run() {
 
         SocketChannel socket = null;
         try {
-            //接收新连接
+            // 接收新连接, 这里是阻塞的
             socket = serverSock.accept();
         } catch (IOException ioe) {
             // 报错, 减少连接数
@@ -194,7 +193,7 @@ public void run() {
                 break;
             }
         }
-        // Successful accept, reset the error delay
+        // accept 成功，将 errorDelay 设置为 0
         errorDelay = 0;
 
         // Configure the socket
@@ -244,6 +243,12 @@ protected boolean setSocketOptions(SocketChannel socket) {
     }
     return true;
 }
+```
+可以看出来, Acceptor就是用来接收新连接, 并且调用`Poller`的`register()`方法, 把新连接交给`Poller`处理, 之后就继续下一个循环
+
+我们只需要明白，此时，往 `Poller` 中注册了一个`NioChannel`实例，此实例包含客户端过来的 `SocketChannel` 和一个 `SocketBufferHandler` 实例。
+
+```
 // org.apache.tomcat.util.net.NioEndpoint.Poller#register
 public void register(final NioChannel socket) {
     socket.setPoller(this);
@@ -270,9 +275,14 @@ private void addEvent(PollerEvent event) {
 }
 ```
 
-明显这里使用的是生产/消费模式接受, 那么接下来就是要要那里消费了这个事件
+明显这里使用的是生产/消费模式发送了接收新连接的事件, 那么接下来就是要看那里消费了这个事件
 
 ```
+// eventCache 队列缓存，此类的核心
+private SynchronizedStack<PollerEvent> eventCache;
+
+private AtomicLong wakeupCounter = new AtomicLong(0);
+private volatile int keyCount = 0;
 public void run() {
     while (true) {
         // 是否有事件
@@ -283,10 +293,12 @@ public void run() {
                 // 重点, 检查是否有事件, 在这里把新连接的socketChannel注册到Selector
                 hasEvents = events();
                 // 注册完socketChannel就调用select阻塞, 知道有数据到达
+                // wakeupCounter 的初始值为 0，这里设置为 -1
                 if (wakeupCounter.getAndSet(-1) > 0) {
                     //if we are here, means we have other stuff to do  do a non blocking select
                     keyCount = selector.selectNow();
                 } else {
+                    // 默认1秒超时
                     keyCount = selector.select(selectorTimeout);
                 }
                 wakeupCounter.set(0);
@@ -306,36 +318,30 @@ public void run() {
             log.error("",x);
             continue;
         }
-        //either we timed out or we woke up, process events first
+        // 在处理数据前, 在查看下有没有新连接要注册
         if ( keyCount == 0 ) hasEvents = (hasEvents | events());
 
-        Iterator<SelectionKey> iterator =
-            keyCount > 0 ? selector.selectedKeys().iterator() : null;
-        // Walk through the collection of ready keys and dispatch
-        // any active event.
+        Iterator<SelectionKey> iterator = keyCount > 0 ? selector.selectedKeys().iterator() : null;
         while (iterator != null && iterator.hasNext()) {
             SelectionKey sk = iterator.next();
             NioSocketWrapper attachment = (NioSocketWrapper)sk.attachment();
-            // Attachment may be null if another thread has called
-            // cancelledKey()
+            // Attachment may be null if another thread has called cancelledKey()
             if (attachment == null) {
                 iterator.remove();
             } else {
                 iterator.remove();
+                // 重点, 处理数据
                 processKey(sk, attachment);
             }
-        }//while
-
+        }
         //process timeouts
         timeout(keyCount,hasEvents);
-    }//while
-
+    }
     getStopLatch().countDown();
 }
 
 public boolean events() {
     boolean result = false;
-
     PollerEvent pe = null;
     // events.poll()会拉取一个上面插入的PollerEvent
     for (int i = 0, size = events.size(); i < size && (pe = events.poll()) != null; i++ ) {
@@ -353,12 +359,13 @@ public boolean events() {
     }
     return result;
 }
-
 public void run() {
     if (interestOps == OP_REGISTER) {
         // 终于, 在这里把新连接的socketChannel注册到Selector
+        // 将 socketWrapper 设置为 attachment 进行传递 这个对象里啥都有
         socket.getIOChannel().register(socket.getPoller().getSelector(), SelectionKey.OP_READ, socketWrapper);
     } else {
+        // TODO: 这个else 是干嘛
         final SelectionKey key = socket.getIOChannel().keyFor(socket.getPoller().getSelector());
         try {
             if (key == null) {
@@ -388,6 +395,154 @@ public void run() {
 }
 ```
 
+到这里，我们再回顾一下：刚刚在 `PollerEvent#run()`方法中，我们看到，新的 `SocketChannel` 注册到了 `Poller` 内部的 `Selector` 中，监听 `OP_READ` 事件，然后我们再回到 `Poller#run()` 看下，一旦该 `SocketChannel` 是 `readable` 的状态，那么就会进入到 `poller` 的 `processKey` 方法。
+
+```
+protected void processKey(SelectionKey sk, NioSocketWrapper attachment) {
+    try {
+        if ( close ) {
+            cancelledKey(sk);
+        } else if ( sk.isValid() && attachment != null ) {
+            if (sk.isReadable() || sk.isWritable() ) {
+                if ( attachment.getSendfileData() != null ) {
+                    // TODO: Sendfile 是啥?
+                    processSendfile(sk,attachment, false);
+                } else {
+                    // 如接下来是处理 SocketChannel 进来的数据，那么就不再监听该 channel 的 OP_READ 事件
+                    unreg(sk, attachment, sk.readyOps());
+                    boolean closeSocket = false;
+                    if (sk.isReadable()) {
+                        // 重点
+                        if (!processSocket(attachment, SocketEvent.OPEN_READ, true)) {
+                            closeSocket = true;
+                        }
+                    }
+                    if (!closeSocket && sk.isWritable()) {
+                        if (!processSocket(attachment, SocketEvent.OPEN_WRITE, true)) {
+                            closeSocket = true;
+                        }
+                    }
+                    if (closeSocket) {
+                        cancelledKey(sk);
+                    }
+                }
+            }
+        } else {
+            cancelledKey(sk);
+        }
+    } catch ( CancelledKeyException ckx ) {
+        cancelledKey(sk);
+    }
+}
+
+// dispatch是true
+public boolean processSocket(SocketWrapperBase<S> socketWrapper, SocketEvent event, boolean dispatch) {
+    try {
+        if (socketWrapper == null) {
+            return false;
+        }
+        // 获得SocketProcessor的实例, 如果没有, 则创建
+        SocketProcessorBase<S> sc = processorCache.pop();
+        if (sc == null) {
+            // return new SocketProcessor(socketWrapper, event);
+            sc = createSocketProcessor(socketWrapper, event);
+        } else {
+            sc.reset(socketWrapper, event);
+        }
+        // 如果有线程池, 则用线程池执行, 否则当前线程执行
+        Executor executor = getExecutor();
+        if (dispatch && executor != null) {
+            executor.execute(sc);
+        } else {
+            sc.run();
+        }
+    } catch (RejectedExecutionException ree) {
+        return false;
+    } catch (Throwable t) {
+        ExceptionUtils.handleThrowable(t);
+        // This means we got an OOM or similar creating a thread, or that the pool and its queue are full
+        return false;
+    }
+    return true;
+}
+```
+
+我们看到，提交到`worker`线程池中的是`NioEndpoint.SocketProcessor`的实例, 所以我们继续看其`run()`, 是怎么读取与封装数据的
+
+### 1.2 SocketProcessor
+
+SocketProcessor在一个线程池或者当前线程完成相应的处理逻辑。
+```
+// SocketProcessor#run() 的绝大部分逻辑都在这个 doRun()方法中
+protected void doRun() {
+    // 该方法将会执行于 tomcat 的 worker 线程中，比如 : http-nio-8080-exec-1
+    获取待处理的客户端请求
+    NioChannel socket = socketWrapper.getSocket();
+    SelectionKey key = socket.getIOChannel().keyFor(socket.getPoller().getSelector());
+
+    try {
+        // 这里的 handshake 是用来处理 https 的握手过程的，
+        // 如果是 http 不需要该握手阶段，下面会将该标志设置为 0， 表示握手已经完成
+        int handshake = -1;
+
+        try {
+            if (key != null) {
+                if (socket.isHandshakeComplete()) {
+                    // HTTP 标志设置为 0
+                    handshake = 0;
+                } else if (event == SocketEvent.STOP || event == SocketEvent.DISCONNECT || event == SocketEvent.ERROR) {
+                    handshake = -1;
+                } else {
+                    handshake = socket.handshake(key.isReadable(), key.isWritable());
+                    event = SocketEvent.OPEN_READ;
+                }
+            }
+        } catch (IOException x) {
+            handshake = -1;
+        } catch (CancelledKeyException ckx) {
+            handshake = -1;
+        }
+        if (handshake == 0) {
+            // 处理握手完成或者不需要握手的情况
+            SocketState state = SocketState.OPEN;
+            if (event == null) {
+                // 默认是读事件处理 
+                // 这里的getHandler()返回AbstractProtocol.ConnectionHandler, 
+                // 在Http11NioProtocol对象构造期间被创建并设置到当前NioEndpoint对象
+                state = getHandler().process(socketWrapper, SocketEvent.OPEN_READ);
+            } else {
+                // 响应指定事件处理
+                state = getHandler().process(socketWrapper, event);
+            }
+            if (state == SocketState.CLOSED) {
+                close(socket, key);
+            }
+        } else if (handshake == -1 ) {
+            close(socket, key);
+        } else if (handshake == SelectionKey.OP_READ){
+            socketWrapper.registerReadInterest();
+        } else if (handshake == SelectionKey.OP_WRITE){
+            socketWrapper.registerWriteInterest();
+        }
+    } catch (CancelledKeyException cx) {
+        socket.getPoller().cancelledKey(key);
+    } catch (VirtualMachineError vme) {
+        ExceptionUtils.handleThrowable(vme);
+    } catch (Throwable t) {
+        log.error("", t);
+        socket.getPoller().cancelledKey(key);
+    } finally {
+        socketWrapper = null;
+        event = null;
+        //return to cache
+        if (running && !paused) {
+            processorCache.push(this);
+        }
+    }
+}
+```
+
+
 ## 2. Servlet
 
 
@@ -398,5 +553,6 @@ public void run() {
 
 ## 5. 附录
     https://www.jianshu.com/p/76ff17bc6dea
+    https://www.jianshu.com/p/c6d57441da5b
     
 ## 6. TODO
