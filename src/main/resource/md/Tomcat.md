@@ -176,10 +176,11 @@ protected void configureContext(Context context,
     }
     // 重点: 将 TomcatStarter 放入 StandardContext
     context.addServletContainerInitializer(starter, NO_CLASSES);
-    // 继续初始化 StandardContext , 就不分析了
+    // 这里初始化了监听器
     for (LifecycleListener lifecycleListener : this.contextLifecycleListeners) {
         context.addLifecycleListener(lifecycleListener);
     }
+    // 继续初始化 StandardContext , 就不分析了
     for (Valve valve : this.contextValves) {
         context.getPipeline().addValve(valve);
     }
@@ -395,6 +396,7 @@ private ServletRegistration.Dynamic addServlet(String servletName, String servle
             annotation = clazz.getAnnotation(ServletSecurity.class);
         }
     } else {
+        // 将servlet加入 StandardWrapper
         wrapper.setServletClass(servlet.getClass().getName());
         wrapper.setServlet(servlet);
         if (context.wasCreatedDynamicServlet(servlet)) {
@@ -416,15 +418,11 @@ private ServletRegistration.Dynamic addServlet(String servletName, String servle
 }
 ```
 
+这里可以看出来, 一个 StandardContext 对应多个 StandardWrapper, 一个StandardWrapper对应一个Servlet
 
+至此, 我们已经把`DispatherServlet`注册进`Wrapper`, 且`Wrapper`已经被`StandardContext`的`children`成员变量所引用, 具备了在`Tomcat`运行中被调用的可能.
 
-从
-    org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext#finishRefresh()
-到
-    org.apache.catalina.core.StandardWrapper#load()
-
-
-至此, `Tomcat`启动时候的我想关注的点都已经探索完毕, 那么还剩余的就是Tomcat运行时逻辑, 也就是Tomcat对Java NIO的处理
+`Tomcat`启动时候的关注的点都已经探索完毕, 那么还剩余的就是Tomcat运行时逻辑, 也就是Tomcat对Java NIO的处理
 
 ## 3. NioEndPoint
 `NioEndPoint`是Tomcat对使用Java NIO来接受请求的实现类
@@ -961,104 +959,36 @@ protected void doRun() {
 }
 ```
 
-再继续就是`Http11NioProtocol`获得协议, 方法, header 等逻辑, 我们不关心这些逻辑, 直接跳到`Servlet`相关的代码
+再继续就是`Http11NioProtocol`获得协议, 方法, header 等逻辑, 我们不关心这些逻辑, 直接跳到`Servlet`相关的代码, 来看看`DispatherServlet`是怎么被调用的
 
 ## 4. DispatcherServlet
 
 首先, 提出疑问: 请求是如何进入`DispatcherServlet`
 
-TODO
+回答这问题之前, 需要先BB几句了解Tomcat的内部结构, 否则会一头雾水.
 
-查看`Tomcat`启动就会调用的load()方法: 在`StandardWrapper`中, 似乎初始化了Servlet
-```
-// org.apache.catalina.core.StandardWrapper#load()
-public synchronized void load() throws ServletException {
-    // 加载Servlet
-    instance = loadServlet();
-    // 初始化
-    if (!instanceInitialized) {
-        initServlet(instance);
-    }
-    if (isJspServlet) {
-        // 不重要, 省略
-    }
-}
-public synchronized Servlet loadServlet() throws ServletException {
-    // 缓存中取
-    if (!singleThreadModel && (instance != null))
-        return instance;
-    // 这看起来是日志相关
-    PrintStream out = System.out;
-    if (swallowOutput) {
-        SystemLogHandler.startCapture();
-    }
-    Servlet servlet;
-    try {
-        long t1=System.currentTimeMillis();
-        // 默认 org.apache.catalina.servlets.DefaultServlet. 这里不可能是null
-        if (servletClass == null) {
-            unavailable(null);
-            throw new ServletException (sm.getString("standardWrapper.notClass", getName()));
-        }
-        InstanceManager instanceManager = ((StandardContext)getParent()).getInstanceManager();
-        try {
-            // 创建 DefaultServlet
-            servlet = (Servlet) instanceManager.newInstance(servletClass);
-        } catch (ClassCastException e) {
-            unavailable(null);
-            throw new ServletException(sm.getString("standardWrapper.notServlet", servletClass), e);
-        } catch (Throwable e) {
-            e = ExceptionUtils.unwrapInvocationTargetException(e);
-            ExceptionUtils.handleThrowable(e);
-            unavailable(null);
-            // Added extra log statement for Bugzilla 36630: http://bz.apache.org/bugzilla/show_bug.cgi?id=36630
-            log.debug(sm.getString("standardWrapper.instantiate", servletClass), e);
-            throw new ServletException(sm.getString("standardWrapper.instantiate", servletClass), e);
-        }
-        if (multipartConfigElement == null) {
-            MultipartConfig annotation = servlet.getClass().getAnnotation(MultipartConfig.class);
-            if (annotation != null) {
-                multipartConfigElement = new MultipartConfigElement(annotation);
-            }
-        }
-        // Special handling for ContainerServlet instances
-        // Note: The InstanceManager checks if the application is permitted to load ContainerServlets
-        // DefaultServlet 不是 ContainerServlet, 不会被包装
-        if (servlet instanceof ContainerServlet) {
-            ((ContainerServlet) servlet).setWrapper(this);
-        }
-        classLoadTime=(int) (System.currentTimeMillis() -t1);
-        // DefaultServlet 不是 SingleThreadModel
-        if (servlet instanceof SingleThreadModel) {
-            if (instancePool == null) {
-                instancePool = new Stack<>();
-            }
-            singleThreadModel = true;
-        }
-        // 初始化
-        initServlet(servlet);
-        fireContainerEvent("load", this);
-    } finally {
-        if (swallowOutput) {
-            String log = SystemLogHandler.stopCapture();
-            if (log != null && log.length() > 0) {
-                if (getServletContext() != null) {
-                    getServletContext().log(log);
-                } else {
-                    out.println(log);
-                }
-            }
-        }
-    }
-    return servlet;
-}
-```
-然而很遗憾, 这里只初始化了`DefaultServlet`, 并没有我们期待的`DispatcherServlet`, 
+Tomcat中有四种类型的Servlet容器，分别是 Engine、Host、Context、Wrapper,每个Wrapper实例表示一个具体的Servlet定义，StandardWrapper就是Catalina中的Wrapper接口的标准实现.
+
+在每个容器对象里面都有一个`Pipeline`管道及`Valve`阀门模块。 它们是容器类必须具有的模块。在容器对象生成时自动产生。`Pipeline`就像是每个容器的逻辑总线。在`Pipeline`上按照配置的顺序，加载各个`Valve`。通过`Pipeline`完成各个`Valve`之间的调用，各个`Valve`实现具体的应用逻辑。 
 
 
+弄清了这些概念, 就可以简单看一下Tomcat获得连接后做了什么
+
+- 连接器(AbstractProcessor)创建`Request`和`Response`对象；
+- 连接器调用`StandardContext`实例的阀门(`Valve#invoke()`)，
+- 接着`StandardContext`实例的阀门的`invoke()`方法会调用其管道对象的阀门的`invoke`方法，`StandardContext`对象的基础阀是`StandardContextValue`类的实例，因此`StandardContext`的管道对象会调用其基础阀的`invoke`方法，
+- `StandardContextValue`实例的`invoke`方法会获取请求的`Wrapper`实例来处理HTTP请求，调用`Wrapper`实例的`invoke`方法
+- `StandardWrapper`类是`Wrapper`接口的标准实现，`StandardWrapper`对象会调用其管道对象的`invoke`方法。
+- `StandardWrapper`对象的基础阀是`StandardWrapperValue`，因此会调用`StandardWrapperValue#invoke()`方法,其会调用`Wrapper`实例的`allocate()`方法获取`Servlet`实例；
+- `allocate()`方法会调用`load()`方法载入相应的`Servlet`类，若已经载入，咋无需重复载入.
+- `load()`方法会调用`Servlet`实例的`init()`方法
+- `StandWrapperValue`调用`Servlet`实例的`service()`方法
+
+因此, 我们从上面`StandardWrapperValue`类`invoke()`方法开始分析
 
 ## 5. 附录
     https://www.jianshu.com/p/76ff17bc6dea
     https://www.jianshu.com/p/c6d57441da5b
+    https://www.cnblogs.com/ChenD/p/Tomcat-StandardWrapper-Wrapper.html
     
 ## 6. TODO
