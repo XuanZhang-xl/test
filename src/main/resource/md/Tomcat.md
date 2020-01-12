@@ -422,6 +422,15 @@ private ServletRegistration.Dynamic addServlet(String servletName, String servle
 
 至此, 我们已经把`DispatherServlet`注册进`Wrapper`, 且`Wrapper`已经被`StandardContext`的`children`成员变量所引用, 具备了在`Tomcat`运行中被调用的可能.
 
+## 2.3. ServletWebServerApplicationContext.finishRefresh
+
+上面的代码只是设置了`DispatcherServlet`, 还有一个问题就是Tomcat是怎么启动的, 我们来看`ServletWebServerApplicationContext.finishRefresh()`方法
+
+里面也包括了`Servlet`的初始化方法, 所以, `Servlet`并没有延迟初始化
+
+TODO
+
+
 `Tomcat`启动时候的关注的点都已经探索完毕, 那么还剩余的就是Tomcat运行时逻辑, 也就是Tomcat对Java NIO的处理
 
 ## 3. NioEndPoint
@@ -963,28 +972,156 @@ protected void doRun() {
 
 ## 4. DispatcherServlet
 
-首先, 提出疑问: 请求是如何进入`DispatcherServlet`
+首先, 提出疑问: 请求是如何进入`DispatcherServlet`的?
 
-回答这问题之前, 需要先BB几句了解Tomcat的内部结构, 否则会一头雾水.
+回答这问题之前, 需要先BB几句以了解Tomcat的内部结构, 否则会一头雾水.
 
 Tomcat中有四种类型的Servlet容器，分别是 Engine、Host、Context、Wrapper,每个Wrapper实例表示一个具体的Servlet定义，StandardWrapper就是Catalina中的Wrapper接口的标准实现.
 
 在每个容器对象里面都有一个`Pipeline`管道及`Valve`阀门模块。 它们是容器类必须具有的模块。在容器对象生成时自动产生。`Pipeline`就像是每个容器的逻辑总线。在`Pipeline`上按照配置的顺序，加载各个`Valve`。通过`Pipeline`完成各个`Valve`之间的调用，各个`Valve`实现具体的应用逻辑。 
 
-
 弄清了这些概念, 就可以简单看一下Tomcat获得连接后做了什么
 
-- 连接器(AbstractProcessor)创建`Request`和`Response`对象；
-- 连接器调用`StandardContext`实例的阀门(`Valve#invoke()`)，
-- 接着`StandardContext`实例的阀门的`invoke()`方法会调用其管道对象的阀门的`invoke`方法，`StandardContext`对象的基础阀是`StandardContextValue`类的实例，因此`StandardContext`的管道对象会调用其基础阀的`invoke`方法，
-- `StandardContextValue`实例的`invoke`方法会获取请求的`Wrapper`实例来处理HTTP请求，调用`Wrapper`实例的`invoke`方法
-- `StandardWrapper`类是`Wrapper`接口的标准实现，`StandardWrapper`对象会调用其管道对象的`invoke`方法。
-- `StandardWrapper`对象的基础阀是`StandardWrapperValue`，因此会调用`StandardWrapperValue#invoke()`方法,其会调用`Wrapper`实例的`allocate()`方法获取`Servlet`实例；
+- 连接器(实际为`AbstractProcessor`)创建`Request`和`Response`对象；
+- 连接器(实际为`CoyoteAdapter`)调用`Engine`容器的阀门
+- 然后接连触发`Host`, `Context`, `Wrapper`的阀门
+- 最后一个容器`Wrapper`的实现类`StandardWrapper`对象的基础阀是`StandardWrapperValue`，因此会调用`StandardWrapperValue#invoke()`方法,其会调用`Wrapper`实例的`allocate()`方法获取`Servlet`实例；
 - `allocate()`方法会调用`load()`方法载入相应的`Servlet`类，若已经载入，咋无需重复载入.
 - `load()`方法会调用`Servlet`实例的`init()`方法
 - `StandWrapperValue`调用`Servlet`实例的`service()`方法
 
-因此, 我们从上面`StandardWrapperValue`类`invoke()`方法开始分析
+因此, 我们从上面`StandardWrapperValue`类`invoke()`方法开始分析, `invoke()`方法非常长, 只贴要点
+```
+public final void invoke(Request request, Response response) throws IOException, ServletException {
+    // Initialize local variables we may need
+    boolean unavailable = false;
+    Throwable throwable = null;
+    StandardWrapper wrapper = (StandardWrapper) getContainer();
+    Servlet servlet = null;
+    // 获得Context, 和SpringBoot一起用时, 实现类为 TomcatEmbeddedContext
+    Context context = (Context) wrapper.getParent();
+    // context, wrapper不可用的逻辑处理, 忽略
+    if (!context.getState().isAvailable()) {
+        response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, sm.getString("standardContext.isUnavailable"));
+        unavailable = true;
+    }
+    if (!unavailable && wrapper.isUnavailable()) {
+        unavailable = true;
+    }
+    // Allocate a servlet instance to process this request
+    try {
+        if (!unavailable) {
+            // 重点1: 动态得获得Servlet
+            servlet = wrapper.allocate();
+        }
+    } catch (Throwable e) {
+        // 错误处理, 忽略
+        servlet = null;
+    }
+    MessageBytes requestPathMB = request.getRequestPathMB();
+    DispatcherType dispatcherType = DispatcherType.REQUEST;
+    if (request.getDispatcherType()==DispatcherType.ASYNC) dispatcherType = DispatcherType.ASYNC;
+    request.setAttribute(Globals.DISPATCHER_TYPE_ATTR,dispatcherType);
+    request.setAttribute(Globals.DISPATCHER_REQUEST_PATH_ATTR, requestPathMB);
+    // 重点2: 获得filter并设置Servlet
+    ApplicationFilterChain filterChain = ApplicationFilterFactory.createFilterChain(request, wrapper, servlet);
+    // 重点3: 调用filter, 同时也会调用Servlet#service()
+    if ((servlet != null) && (filterChain != null)) {
+        // Swallow output if needed
+        if (context.getSwallowOutput()) {
+            if (request.isAsyncDispatching()) {
+                request.getAsyncContextInternal().doInternalDispatch();
+            } else {
+                filterChain.doFilter(request.getRequest(), response.getResponse());
+            }
+        } else {
+            if (request.isAsyncDispatching()) {
+                request.getAsyncContextInternal().doInternalDispatch();
+            } else {
+                filterChain.doFilter(request.getRequest(), response.getResponse());
+            }
+        }
+    }
+    // Release the filter chain (if any) for this request
+    if (filterChain != null) {
+        filterChain.release();
+    }
+    // Deallocate the allocated servlet instance
+    if (servlet != null) {
+        // 非STM, 减少计数, STM, 减少计数,放回servlet池
+        wrapper.deallocate(servlet);
+    }
+}
+```
+
+分别讲下此方法的三个重点步骤
+
+### 4.1. 获得Servlet
+```
+// StandardWrapper#allocate()
+protected volatile Servlet instance = null;
+public Servlet allocate() throws ServletException {
+    boolean newInstance = false;
+    // 当前Servlet是否继承了 SingleThreadedModel(STM), 如果实现了, 则每次新建实例, 如果没实现, 则用一个实例, 在新Servlet规范中已废弃
+    if (!singleThreadModel) {
+        // 又见双重锁定
+        if (instance == null || !instanceInitialized) {
+            synchronized (this) {
+                // 先初始化, 初始化后, 有可能发现实际上是继承了 SingleThreadedModel 的
+                // DispatcherServlet的loadOnStartup参数为1, 所以其在启动时就已经初始化, 所以不会走到这个if里
+                if (instance == null) {
+                    instance = loadServlet();
+                    newInstance = true;
+                    if (!singleThreadModel) {
+                        // For non-STM, increment here to prevent a race condition with unload. Bug 43683, test case #3
+                        countAllocated.incrementAndGet();
+                    }
+                }
+                if (!instanceInitialized) {
+                    initServlet(instance);
+                }
+            }
+        }
+
+        if (singleThreadModel) {
+            if (newInstance) {
+                // Have to do this outside of the sync above to prevent a possible deadlock
+                synchronized (instancePool) {
+                    instancePool.push(instance);
+                    nInstances++;
+                }
+            }
+        } else {
+            // 直接返回非STM servlet
+            // For new instances, count will have been incremented at the time of creation
+            if (!newInstance) {
+                countAllocated.incrementAndGet();
+            }
+            return instance;
+        }
+    }
+    // 如果是多例Servlet, 从池中取
+    synchronized (instancePool) {
+        while (countAllocated.get() >= nInstances) {
+            // Allocate a new instance if possible, or else wait
+            if (nInstances < maxInstances) {
+                instancePool.push(loadServlet());
+                nInstances++;
+            } else {
+                instancePool.wait();
+            }
+        }
+        log.trace("  Returning allocated STM instance");
+        countAllocated.incrementAndGet();
+        return instancePool.pop();
+    }
+}
+```
+
+### 4.2. 创建过滤器链
+
+### 4.3. 调用过滤器链
+
 
 ## 5. 附录
     https://www.jianshu.com/p/76ff17bc6dea
