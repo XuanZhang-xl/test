@@ -1394,15 +1394,15 @@ private void internalDoFilter(ServletRequest request, ServletResponse response) 
 至此, 终于调用了`DispatcherServlet#service()`, 接下来的内容就是SpringMvc做的事情了, 终于可以继续研究SpringMvc了.
 
 ### 4.5. Filter
-SpringBoot默认的5个Filter
+Spring默认的5个Filter
 - org.springframework.web.filter.CharacterEncodingFilter
     - request.setCharacterEncoding(encoding);
 - org.springframework.web.filter.HiddenHttpMethodFilter
-    - 如果是POST请求, 则把`HttpServletRequest`封装为HttpServletRequestWrapper
+    - 浏览器只支持`POST`和`GET`的方式，想要实现`HEAD`、`OPTIONS`、`TRACE`、`DELETE`、`PUT`的方式, 使用_method的这个参数来决定过滤成是什么类型, 原请求必须是`POST`请求
 - org.springframework.web.filter.HttpPutFormContentFilter
-    - 处理`PUT`和`PATCH`请求
+    - 处理`PUT`和`PATCH`请求的表单数据
 - org.springframework.web.filter.RequestContextFilter
-    - `ThreadLocal`中设置`Locale`
+    - 将当前请求的`Locale`, `Request`, `Response`都设置到当前线程`ThreadLocal`
 - org.apache.tomcat.websocket.server.WsFilter
     - 这是Tomcat的, 处理WebSocket
 

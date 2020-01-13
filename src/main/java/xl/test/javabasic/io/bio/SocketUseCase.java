@@ -230,4 +230,37 @@ public class SocketUseCase {
         }
     }
 
+    /**
+     * 请求 raffle
+     * 但是无响应?  TODO
+     * @throws IOException
+     */
+    @Test
+    public void getRaffleClient() throws IOException {
+        Socket socket = null;
+        try {
+            socket = new Socket("127.0.0.1", 8080);
+            socket.setSoTimeout(15000);
+
+            OutputStreamWriter osw = new OutputStreamWriter(socket.getOutputStream());
+            // 读取结束条件为空字符串, 所以必须在家\r\n
+            osw.write("GET /fake_num?num=1 HTTP/1.1\n" +
+                    "Host: 127.0.0.1:8080\n" +
+                    "Content-Type: application/json");
+            osw.flush();
+            InputStreamReader reader = new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8);
+            int c;
+            StringBuilder sb = new StringBuilder();
+            while ((c = reader.read()) != -1) {
+                sb.append((char)c);
+            }
+            System.out.println(sb);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (socket != null) {
+                socket.close();
+            }
+        }
+    }
 }
