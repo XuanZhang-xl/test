@@ -3,19 +3,18 @@
 本文对Tomcat的总结是为了更好得理解`SpringMVC`与`Java NIO`, 故不会对Tomcat进行全局分析, 将专注于以下几个点:
 - Tomcat如何利用Java NIO
 - Tomcat对Servlet的实现
-- Tomcat的拦截器/过滤器, 设计模式
+- Tomcat的拦截器, 设计模式
 - SpringBoot对Tomcat的整合
 
 先上一张Tomcat启动时序图
 
 ![](../img/tomcat/tomcatinit.png)
 
-## 1. Tomcat的拦截器/过滤器
+## 1. Tomcat的启动阶段
 
+只分析`SpringBoot`是如何启动Tomcat
 
-## 2. SpringBoot与Tomcat的整合
-
-SpringBoot可以启动很多服务器类型, 但是为了方便, 后文都默认启动的是Tomcat.
+### 1.1. SpringBoot与Tomcat的整合
 
 SpringBoot与Tomcat的整合最重要的就是要使Tomcat接收的请求, 进入`DispatcherServlet`交给`SpringMVC`处理, 因此, 从`DispatcherServlet`入手
 
@@ -52,7 +51,7 @@ public ServletRegistrationBean<DispatcherServlet> dispatcherServletRegistration(
 - `ServletRegistrationBean`必然有注册才能调用, 那么是何时注册的
 - 这逻辑的入口在哪里
 
-### 2.1. AbstractApplicationContext#onRefresh()
+### 1.2. AbstractApplicationContext#onRefresh()
 
 一切从我们熟悉的`AbstractApplicationContext#onRefresh()`方法说起, 当应用类型是Web时, SpringBoot默认帮我们实例化的`ApplicationContext`是`AnnotationConfigServletWebServerApplicationContext`, 其是`ServletWebServerApplicationContext`的子类.
  
@@ -230,6 +229,7 @@ private void initialize() throws WebServerException {
         try {
             addInstanceIdToEngineName();
             Context context = findContext();
+            // 重点: 添加生命周期监听器, 移除 Connectors, 这个后面再说
             context.addLifecycleListener((event) -> {
                 if (context.equals(event.getSource()) && Lifecycle.START_EVENT.equals(event.getType())) {
                     removeServiceConnectors();
@@ -325,7 +325,7 @@ public ServletContextInitializerBeans(ListableBeanFactory beanFactory) {
 
 至此, SpringBoot帮我们注册的`ServletRegistrationBean`的`onStartup()`方法终于被调用
 
-### 2.2. ServletRegistrationBean#onStartup()
+### 1.3. ServletRegistrationBean#onStartup()
 
 剩下的就相对比较简单了, 就是往 里加Servlet就可以了
 
@@ -422,18 +422,135 @@ private ServletRegistration.Dynamic addServlet(String servletName, String servle
 
 至此, 我们已经把`DispatherServlet`注册进`Wrapper`, 且`Wrapper`已经被`StandardContext`的`children`成员变量所引用, 具备了在`Tomcat`运行中被调用的可能.
 
-## 2.3. ServletWebServerApplicationContext.finishRefresh
+## 2. Tomcat Connection的启动
 
-上面的代码只是设置了`DispatcherServlet`, 还有一个问题就是Tomcat是怎么启动的, 我们来看`ServletWebServerApplicationContext.finishRefresh()`方法
+按Tomcat的启动时序图来说, 经过上面的代码, Tomcat就已经启动了, 即Tomcat已经监听端口了, 但是, SpringBoot对Tomcat的启动做了一个小修改, 此时的Tomcat的容器虽然都初始化了, 但是Connection却还没有初始化.
 
-里面也包括了`Servlet`的初始化方法, 所以, `Servlet`并没有延迟初始化
+在`TomcatWebServer#initialize()`方法中: 有这样的一段代码:
+```
+context.addLifecycleListener((event) -> {
+    if (context.equals(event.getSource()) && Lifecycle.START_EVENT.equals(event.getType())) {
+        removeServiceConnectors();
+    }
+});
+```
 
-TODO
+它注册了一个`LifecycleListener`, 并在里面调用了`removeServiceConnectors()`这个方法
+```
+private void removeServiceConnectors() {
+    for (Service service : this.tomcat.getServer().findServices()) {
+        Connector[] connectors = service.findConnectors().clone();
+        this.serviceConnectors.put(service, connectors);
+        for (Connector connector : connectors) {
+            service.removeConnector(connector);
+        }
+    }
+}
+```
+它将`Connector`暂存在`serviceConnectors`这个变量里, 并移除可各个`Service`的`Connector`
 
+它会在`StandardContext#startInternal()`中执行
 
-`Tomcat`启动时候的关注的点都已经探索完毕, 那么还剩余的就是Tomcat运行时逻辑, 也就是Tomcat对Java NIO的处理
+SoringBoot为什么这么做? 可以猜测是因为初始化`Connector`可能依赖Spring容器 TODO
 
-## 3. NioEndPoint
+### 2.1. ServletWebServerApplicationContext.finishRefresh
+`Connection`实际上是在`ServletWebServerApplicationContext.finishRefresh()`方法中启动的
+
+```
+// ServletWebServerApplicationContext#finishRefresh()
+protected void finishRefresh() {
+    super.finishRefresh();
+    // 重点启动Tomcat
+    WebServer webServer = startWebServer();
+    // 这里使用了ApplicationContext的事件发布功能
+    // ??? 这个事件的作用?
+    if (webServer != null) {
+        publishEvent(new ServletWebServerInitializedEvent(webServer, this));
+    }
+}
+
+public void start() throws WebServerException {
+    synchronized (this.monitor) {
+        if (this.started) {
+            return;
+        }
+        try {
+            // 把Connection放回Service中, 并清空serviceConnectors变量, 总之, 就是还原到LifecycleListener调用之前的状态
+            // 重点: 这里会监听端口
+            addPreviouslyRemovedConnectors();
+            // 获得上一行代码还原的Connector
+            Connector connector = this.tomcat.getConnector();
+            if (connector != null && this.autoStart) {
+                // 这里调用流程很长, 但是实际上就是对loadOnStartup这个参数的实现, 最终调用 StandardWrapper#load()
+                startConnector();
+            }
+            checkThatConnectorsHaveStarted();
+            this.started = true;
+            TomcatWebServer.logger.info("Tomcat started on port(s): " + getPortsDescription(true) + " with context path '" + getContextPath() + "'");
+        } catch (ConnectorStartFailedException ex) {
+            stopSilently();
+            throw ex;
+        } catch (Exception ex) {
+            throw new WebServerException("Unable to start embedded Tomcat server", ex);
+        }
+        finally {
+            Context context = findContext();
+            ContextBindings.unbindClassLoader(context, context.getNamingToken(), getClass().getClassLoader());
+        }
+    }
+}
+private void addPreviouslyRemovedConnectors() {
+    Service[] services = this.tomcat.getServer().findServices();
+    for (Service service : services) {
+        Connector[] connectors = this.serviceConnectors.get(service);
+        if (connectors != null) {
+            for (Connector connector : connectors) {
+                // 重点:
+                service.addConnector(connector);
+                if (!this.autoStart) {
+                    stopProtocolHandler(connector);
+                }
+            }
+            this.serviceConnectors.remove(service);
+        }
+    }
+}
+```
+
+`addPreviouslyRemovedConnectors()`看似只是个还原操作, 实际上逻辑逗藏在`service.addConnector(connector);`这行代码里
+```
+public void addConnector(Connector connector) {
+    synchronized (connectorsLock) {
+        connector.setService(this);
+        Connector results[] = new Connector[connectors.length + 1];
+        System.arraycopy(connectors, 0, results, 0, connectors.length);
+        results[connectors.length] = connector;
+        connectors = results;
+        if (getState().isAvailable()) {
+            try {
+                // 重点: 启动Connector
+                connector.start();
+            } catch (LifecycleException e) {
+                log.error(sm.getString("standardService.connector.startFailed", connector), e);
+            }
+        }
+
+        // Report this property change to interested listeners
+        support.firePropertyChange("connector", null, connector);
+    }
+
+}
+```
+
+这里`connector.start();`的调用链又很长, 它会依次调用:
+- `Connector#startInternal()`
+- `AbstractProtocol#start()`
+- `AbstractEndpoint#start()`
+
+### 2.2. AbstractEndpoint#start
+
+我们只关注`AbstractEndpoint#start()`方法, 因为它和`Java NIO`相关
+
 `NioEndPoint`是Tomcat对使用Java NIO来接受请求的实现类
 
 要理解tomcat的nio最主要就是对NioEndpoint的理解。它一共包含`LimitLatch`、`Acceptor`、`Poller`、`SocketProcessor`、`Executor`5个部分。
@@ -443,19 +560,7 @@ TODO
 - `Poller`来负责轮询，`Poller`线程数量是cpu的核数`Math.min(2,Runtime.getRuntime().availableProcessors())`。由Poller将就绪的事件生成`SocketProcessor`同时交给`Executor`去执行。
 - `Executor`线程池的大小就是我们在Connector节点配置的maxThreads的值。在`Executor`的线程中，会完成从socket中读取http request，解析成`HttpServletRequest`对象，分派到相应的servlet并完成逻辑，然后将response通过socket发回client。
 
-
-在从socket中读数据和往socket中写数据的过程，并没有像典型的非阻塞的NIO的那样，注册OP_READ或OP_WRITE事件到主Selector，而是直接通过socket完成读写，这时是阻塞完成的，但是在timeout控制上，使用了NIO的Selector机制，但是这个Selector并不是Poller线程维护的主Selector，而是BlockPoller线程中维护的Selector，称之为辅Selector。
-
-Tomcat NIO线程模型
-
-![](../img/tomcat/tomcatniomodel.jpg)
-
-下面通过源码来深入理解上图中的内容
-
-### 3.1. NioEndPoint源码解读
-
-从`start()`方法开始
-
+继续看代码:
 ```
 org.apache.tomcat.util.net.AbstractEndpoint#start
 public final void start() throws Exception {
@@ -509,6 +614,7 @@ public void open() throws IOException {
     getSharedSelector();
     // 默认是true
     if (SHARED) {
+        // ???
         blockingSelector = new NioBlockingSelector();
         blockingSelector.open(getSharedSelector());
     }
@@ -529,7 +635,6 @@ protected Selector getSharedSelector() throws IOException {
     return  SHARED_SELECTOR;
 }
 ```
-
 
 初始化`NioEndPoint`
 ```
@@ -573,6 +678,22 @@ protected LimitLatch initializeConnectionLatch() {
 }
 ```
 到这里，我们启动了工作线程池、 poller 线程组、acceptor 线程组。同时，工作线程池初始就已经启动了 10 个线程。
+
+`Tomcat`启动时候的关注的点都已经探索完毕, 那么还剩余的就是Tomcat运行时逻辑, 继续第二部分源码探索
+
+## 3. Tomcat运行阶段
+
+在从socket中读数据和往socket中写数据的过程，并没有像典型的非阻塞的NIO的那样，注册OP_READ或OP_WRITE事件到主Selector，而是直接通过socket完成读写，这时是阻塞完成的，但是在timeout控制上，使用了NIO的Selector机制，但是这个Selector并不是Poller线程维护的主Selector，而是BlockPoller线程中维护的Selector，称之为辅Selector。
+
+Tomcat NIO线程模型
+
+![](../img/tomcat/tomcatniomodel.jpg)
+
+下面通过源码来深入理解上图中的内容
+
+### 3.1. NioEndPoint.Acceptor.run
+
+这是一切请求进入Java代码最初始的地方
 
 启动`Acceptor`线程后, 重点看下如何接受新请求
 ```
@@ -647,10 +768,7 @@ protected boolean setSocketOptions(SocketChannel socket) {
         // 使用NioChannel封装SocketChannel
         NioChannel channel = nioChannels.pop();
         if (channel == null) {
-            SocketBufferHandler bufhandler = new SocketBufferHandler(
-                    socketProperties.getAppReadBufSize(),
-                    socketProperties.getAppWriteBufSize(),
-                    socketProperties.getDirectBuffer());
+            SocketBufferHandler bufhandler = new SocketBufferHandler(socketProperties.getAppReadBufSize(), socketProperties.getAppWriteBufSize(), socketProperties.getDirectBuffer());
             if (isSSLEnabled()) {
                 channel = new SecureNioChannel(socket, bufhandler, selectorPool, this);
             } else {
@@ -873,6 +991,7 @@ public boolean processSocket(SocketWrapperBase<S> socketWrapper, SocketEvent eve
             // return new SocketProcessor(socketWrapper, event);
             sc = createSocketProcessor(socketWrapper, event);
         } else {
+            // 循环利用回收的SocketProcessor对象
             sc.reset(socketWrapper, event);
         }
         // 如果有线程池, 则用线程池执行, 否则当前线程执行
@@ -895,7 +1014,7 @@ public boolean processSocket(SocketWrapperBase<S> socketWrapper, SocketEvent eve
 
 我们看到，提交到`worker`线程池中的是`NioEndpoint.SocketProcessor`的实例, 所以我们继续看其`run()`, 是怎么读取与封装数据的
 
-### 1.2 SocketProcessor
+### 3.2 SocketProcessor
 
 SocketProcessor在一个线程池或者当前线程完成相应的处理逻辑。
 ```
@@ -985,12 +1104,14 @@ Tomcat中有四种类型的Servlet容器，分别是 Engine、Host、Context、W
 - 连接器(实际为`AbstractProcessor`)创建`Request`和`Response`对象；
 - 连接器(实际为`CoyoteAdapter`)调用`Engine`容器的阀门
 - 然后接连触发`Host`, `Context`, `Wrapper`的阀门
-- 最后一个容器`Wrapper`的实现类`StandardWrapper`对象的基础阀是`StandardWrapperValue`，因此会调用`StandardWrapperValue#invoke()`方法,其会调用`Wrapper`实例的`allocate()`方法获取`Servlet`实例；
+- 最后一个容器`Wrapper`的实现类`StandardWrapper`对象的基础阀是`StandardWrapperValve`，因此会调用`StandardWrapperValve#invoke()`方法,其会调用`Wrapper`实例的`allocate()`方法获取`Servlet`实例；
 - `allocate()`方法会调用`load()`方法载入相应的`Servlet`类，若已经载入，咋无需重复载入.
 - `load()`方法会调用`Servlet`实例的`init()`方法
 - `StandWrapperValue`调用`Servlet`实例的`service()`方法
 
-因此, 我们从上面`StandardWrapperValue`类`invoke()`方法开始分析, `invoke()`方法非常长, 只贴要点
+### 4.1. StandardWrapperValve#invoke()
+
+从上面`StandardWrapperValve`类`invoke()`方法开始分析, `invoke()`方法非常长, 只贴要点
 ```
 public final void invoke(Request request, Response response) throws IOException, ServletException {
     // Initialize local variables we may need
@@ -1019,6 +1140,7 @@ public final void invoke(Request request, Response response) throws IOException,
         servlet = null;
     }
     MessageBytes requestPathMB = request.getRequestPathMB();
+    // 设置 Globals.DISPATCHER_TYPE_ATTR 属性, 是为了筛选符合条件的filter
     DispatcherType dispatcherType = DispatcherType.REQUEST;
     if (request.getDispatcherType()==DispatcherType.ASYNC) dispatcherType = DispatcherType.ASYNC;
     request.setAttribute(Globals.DISPATCHER_TYPE_ATTR,dispatcherType);
@@ -1027,12 +1149,17 @@ public final void invoke(Request request, Response response) throws IOException,
     ApplicationFilterChain filterChain = ApplicationFilterFactory.createFilterChain(request, wrapper, servlet);
     // 重点3: 调用filter, 同时也会调用Servlet#service()
     if ((servlet != null) && (filterChain != null)) {
-        // Swallow output if needed
+        // true情况下, System.out和System.err输出将被定向到web应用日志中
         if (context.getSwallowOutput()) {
+            SystemLogHandler.startCapture();
             if (request.isAsyncDispatching()) {
                 request.getAsyncContextInternal().doInternalDispatch();
             } else {
                 filterChain.doFilter(request.getRequest(), response.getResponse());
+            }
+            String log = SystemLogHandler.stopCapture();
+            if (log != null && log.length() > 0) {
+                context.getLogger().info(log);
             }
         } else {
             if (request.isAsyncDispatching()) {
@@ -1056,7 +1183,7 @@ public final void invoke(Request request, Response response) throws IOException,
 
 分别讲下此方法的三个重点步骤
 
-### 4.1. 获得Servlet
+### 4.2. 动态获得Servlet
 ```
 // StandardWrapper#allocate()
 protected volatile Servlet instance = null;
@@ -1118,14 +1245,174 @@ public Servlet allocate() throws ServletException {
 }
 ```
 
-### 4.2. 创建过滤器链
+### 4.3. 创建过滤器链
+```
+// 这个一般都是null
+public static final boolean IS_SECURITY_ENABLED = (System.getSecurityManager() != null);
+public static ApplicationFilterChain createFilterChain(ServletRequest request, Wrapper wrapper, Servlet servlet) {
+    if (servlet == null) return null;
+    // Create and initialize a filter chain object
+    ApplicationFilterChain filterChain = null;
+    // 实际实现类就是 org.apache.catalina.connector.Request
+    // 显然,这里每次都会new 一个ApplicationFilterChain
+    if (request instanceof Request) {
+        Request req = (Request) request;
+        if (Globals.IS_SECURITY_ENABLED) {
+            filterChain = new ApplicationFilterChain();
+        } else {
+            // 从Request中取filterChain
+            filterChain = (ApplicationFilterChain) req.getFilterChain();
+            if (filterChain == null) {
+                filterChain = new ApplicationFilterChain();
+                req.setFilterChain(filterChain);
+            }
+        }
+    } else {
+        // Request dispatcher in use
+        filterChain = new ApplicationFilterChain();
+    }
 
-### 4.3. 调用过滤器链
+    filterChain.setServlet(servlet);
+    filterChain.setServletSupportsAsync(wrapper.isAsyncSupported());
+
+    // context中的filter, 一般都是在web.xml中定义
+    StandardContext context = (StandardContext) wrapper.getParent();
+    // 只是拿出FilterMap, 因此, filter应该被设计为是线程安全的
+    FilterMap filterMaps[] = context.findFilterMaps();
+
+    // 没有filter, 直接返回
+    if ((filterMaps == null) || (filterMaps.length == 0))
+        return (filterChain);
+
+    // 获得 DispatcherType, 当前请求路径, servlet名字 作为条件对filter进行过滤, 找到本次可以使用的filter
+    DispatcherType dispatcher = (DispatcherType) request.getAttribute(Globals.DISPATCHER_TYPE_ATTR);
+    String requestPath = null;
+    Object attribute = request.getAttribute(Globals.DISPATCHER_REQUEST_PATH_ATTR);
+    if (attribute != null){
+        requestPath = attribute.toString();
+    }
+    String servletName = wrapper.getName();
+
+    // 尼玛, 这代码醉了, Tomcat竟然有这样的代码, 这明明可以和合成一个for循环啊
+    for (int i = 0; i < filterMaps.length; i++) {
+        if (!matchDispatcher(filterMaps[i] ,dispatcher)) {
+            continue;
+        }
+        // 根据url匹配
+        if (!matchFiltersURL(filterMaps[i], requestPath))
+            continue;
+        ApplicationFilterConfig filterConfig = (ApplicationFilterConfig)context.findFilterConfig(filterMaps[i].getFilterName());
+        if (filterConfig == null) {
+            continue;
+        }
+        filterChain.addFilter(filterConfig);
+    }
+    for (int i = 0; i < filterMaps.length; i++) {
+        if (!matchDispatcher(filterMaps[i] ,dispatcher)) {
+            continue;
+        }
+        // 根据servletname匹配
+        if (!matchFiltersServlet(filterMaps[i], servletName))
+            continue;
+        ApplicationFilterConfig filterConfig = (ApplicationFilterConfig)context.findFilterConfig(filterMaps[i].getFilterName());
+        if (filterConfig == null) {
+            continue;
+        }
+        filterChain.addFilter(filterConfig);
+    }
+    return filterChain;
+}
+```
+
+### 4.4. 调用过滤器链
+```
+//org.apache.catalina.core.ApplicationFilterChain#doFilter()中主要方法为 internalDoFilter()
+private void internalDoFilter(ServletRequest request, ServletResponse response) throws IOException, ServletException {
+    // Call the next filter if there is one
+    if (pos < n) {
+        ApplicationFilterConfig filterConfig = filters[pos++];
+        try {
+            Filter filter = filterConfig.getFilter();
+
+            if (request.isAsyncSupported() && "false".equalsIgnoreCase(filterConfig.getFilterDef().getAsyncSupported())) {
+                request.setAttribute(Globals.ASYNC_SUPPORTED_ATTR, Boolean.FALSE);
+            }
+            if( Globals.IS_SECURITY_ENABLED ) {
+                final ServletRequest req = request;
+                final ServletResponse res = response;
+                Principal principal = ((HttpServletRequest) req).getUserPrincipal();
+                Object[] args = new Object[]{req, res, this};
+                SecurityUtil.doAsPrivilege ("doFilter", filter, classType, args, principal);
+            } else {
+                filter.doFilter(request, response, this);
+            }
+        } catch (IOException | ServletException | RuntimeException e) {
+            throw e;
+        } catch (Throwable e) {
+            e = ExceptionUtils.unwrapInvocationTargetException(e);
+            ExceptionUtils.handleThrowable(e);
+            throw new ServletException(sm.getString("filterChain.filter"), e);
+        }
+        return;
+    }
+
+    // filter chain调用结束, 调用Servlet的service方法
+    try {
+        if (ApplicationDispatcher.WRAP_SAME_OBJECT) {
+            lastServicedRequest.set(request);
+            lastServicedResponse.set(response);
+        }
+        if (request.isAsyncSupported() && !servletSupportsAsync) {
+            request.setAttribute(Globals.ASYNC_SUPPORTED_ATTR, Boolean.FALSE);
+        }
+        // Use potentially wrapped request from this point
+        if ((request instanceof HttpServletRequest) && (response instanceof HttpServletResponse) && Globals.IS_SECURITY_ENABLED ) {
+            final ServletRequest req = request;
+            final ServletResponse res = response;
+            Principal principal = ((HttpServletRequest) req).getUserPrincipal();
+            Object[] args = new Object[]{req, res};
+            SecurityUtil.doAsPrivilege("service", servlet, classTypeUsedInService, args, principal);
+        } else {
+            // 重点: 调用servlet的service方法
+            servlet.service(request, response);
+        }
+    } catch (IOException | ServletException | RuntimeException e) {
+        throw e;
+    } catch (Throwable e) {
+        e = ExceptionUtils.unwrapInvocationTargetException(e);
+        ExceptionUtils.handleThrowable(e);
+        throw new ServletException(sm.getString("filterChain.servlet"), e);
+    } finally {
+        if (ApplicationDispatcher.WRAP_SAME_OBJECT) {
+            lastServicedRequest.set(null);
+            lastServicedResponse.set(null);
+        }
+    }
+}
+```
+
+至此, 终于调用了`DispatcherServlet#service()`, 接下来的内容就是SpringMvc做的事情了, 终于可以继续研究SpringMvc了.
+
+### 4.5. Filter
+SpringBoot默认的5个Filter
+- org.springframework.web.filter.CharacterEncodingFilter
+    - request.setCharacterEncoding(encoding);
+- org.springframework.web.filter.HiddenHttpMethodFilter
+    - 如果是POST请求, 则把`HttpServletRequest`封装为HttpServletRequestWrapper
+- org.springframework.web.filter.HttpPutFormContentFilter
+    - 处理`PUT`和`PATCH`请求
+- org.springframework.web.filter.RequestContextFilter
+    - `ThreadLocal`中设置`Locale`
+- org.apache.tomcat.websocket.server.WsFilter
+    - 这是Tomcat的, 处理WebSocket
 
 
 ## 5. 附录
     https://www.jianshu.com/p/76ff17bc6dea
     https://www.jianshu.com/p/c6d57441da5b
     https://www.cnblogs.com/ChenD/p/Tomcat-StandardWrapper-Wrapper.html
+    https://blog.csdn.net/andy_zhang2007/article/details/78795531
     
 ## 6. TODO
+- `NioEndPoint`有必要再列一点出来写下, 里面有很多东西还没明白, 比如 三个缓存 接受请求和处理请求的地方分离
+- SoringBoot为什么要初始化`Connection`后, 再移除, 再初始化`Connection`?
